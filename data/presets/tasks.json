@@ -1,0 +1,24 @@
+[
+    {
+        "type": "random",
+        "code": "rand1",
+        "title": "Random 1",
+        "description": "random task for testing purposes",
+        "active": true,
+        "args": {
+            "min": 1,
+            "max": 10
+        }
+    },
+    {
+        "type": "random",
+        "code": "rand2",
+        "title": "Random 2",
+        "description": "another random task for testing purposes",
+        "active": true,
+        "args": {
+            "min": 100,
+            "max": 99999
+        }
+    }
+]

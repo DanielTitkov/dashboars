@@ -19,24 +19,14 @@ type RandomTaskArgs struct {
 }
 
 func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
-	v, ok := args.Args[argMin]
-	if !ok {
-		return nil, newArgError(argMin)
+	min, err := requireFloat(args.Args, argMin)
+	if err != nil {
+		return nil, err
 	}
 
-	min, ok := v.(float64)
-	if !ok {
-		return nil, newArgTypeError(argMin)
-	}
-
-	v, ok = args.Args[argMax]
-	if !ok {
-		return nil, newArgError(argMax)
-	}
-
-	max, ok := v.(float64)
-	if !ok {
-		return nil, newArgTypeError(argMax)
+	max, err := requireFloat(args.Args, argMax)
+	if err != nil {
+		return nil, err
 	}
 
 	taskArgs := RandomTaskArgs{

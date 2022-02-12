@@ -50,10 +50,12 @@ type (
 
 	SystemSymmary struct {
 		ID              int
-		Users           int
 		Tasks           int
 		ActiveTasks     int
-		Items           int
+		RunningTasks    int
+		CompletedTasks  int
+		FailedTasks     int
+		CollectedItems  int
 		AvgItemsPerTask float64
 		CreateTime      time.Time
 	}

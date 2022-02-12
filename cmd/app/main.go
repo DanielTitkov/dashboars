@@ -1,16 +1,22 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/DanielTitkov/dashboars/cmd/app/prepare"
 	"github.com/DanielTitkov/dashboars/internal/app"
 	"github.com/DanielTitkov/dashboars/internal/configs"
 	"github.com/DanielTitkov/dashboars/internal/handler"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent"
 	"github.com/DanielTitkov/dashboars/logger"
 	"github.com/jfyne/live"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -31,7 +37,22 @@ func main() {
 	defer logger.Sync()
 	logger.Info("starting service", "")
 
-	a, err := app.New(cfg, logger)
+	db, err := ent.Open(cfg.DB.Driver, cfg.DB.URI)
+	if err != nil {
+		logger.Fatal("failed connecting to database", err)
+	}
+	defer db.Close()
+	logger.Info("connected to database", cfg.DB.Driver+", "+cfg.DB.URI)
+
+	err = prepare.Migrate(context.Background(), db) // run db migration
+	if err != nil {
+		logger.Fatal("failed creating schema resources", err)
+	}
+	logger.Info("migrations done", "")
+
+	repo := entgo.NewEntgoRepository(db, logger)
+
+	a, err := app.New(cfg, logger, repo)
 	if err != nil {
 		logger.Fatal("failed to init app", err)
 	}

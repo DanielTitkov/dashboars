@@ -7,13 +7,12 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/domain"
 )
 
-const ()
-
 type FailingTaskArgs struct {
 }
 
 func NewFailingTask(args domain.CreateTaskArgs) (*domain.Task, error) {
 	return &domain.Task{
+		ID:          args.ID,
 		Type:        args.Type,
 		Code:        args.Code,
 		Title:       args.Title,
@@ -43,6 +42,11 @@ func (a *FailingTaskArgs) GetInt(string) (int, bool) {
 	return 0, false
 }
 
-func FailingTaskResolveFn(ctx context.Context, t *domain.Task, args domain.TaskArgs) (*domain.Item, error) {
-	return nil, errors.New("test error from failing task")
+func (a *FailingTaskArgs) ToMap() map[string]interface{} {
+	return make(map[string]interface{})
+}
+
+func FailingTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskInstance) (*domain.TaskInstance, error) {
+	err := errors.New("test error from failing task")
+	return ti.WithError(err), err
 }

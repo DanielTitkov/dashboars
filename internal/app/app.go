@@ -20,14 +20,18 @@ type (
 		cfg       configs.Config
 		log       *logger.Logger
 		scheduler *gocron.Scheduler
+		repo      Repository
 		tasks     []*domain.Task
+	}
+	Repository interface {
+		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)
 	}
 )
 
 func New(
 	cfg configs.Config,
 	logger *logger.Logger,
-	// repo Repository,
+	repo Repository,
 ) (*App, error) {
 	s := gocron.NewScheduler(time.UTC)
 	s.SetMaxConcurrentJobs(cfg.Task.MaxConcurrency, gocron.WaitMode)
@@ -37,7 +41,7 @@ func New(
 		cfg:       cfg,
 		log:       logger,
 		scheduler: s,
-		// repo:   repo,
+		repo:      repo,
 	}
 
 	err := app.loadTasksPresets()
@@ -60,10 +64,11 @@ func New(
 func (a *App) makeTaskJob(task *domain.Task, try int) func() {
 	return func() {
 		// create task instance in db
+		ti := &domain.TaskInstance{}
 
 		// run resolve func
 		a.log.Info(fmt.Sprintf("resolving task, attempt %d", try), task.Code)
-		result, err := task.ResolveFn(context.TODO(), task, task.Args)
+		ti, err := task.ResolveFn(context.TODO(), task, ti)
 		if err != nil {
 			a.log.Error("task failed", err)
 			if try < a.cfg.Task.DefaultRetryNumber {
@@ -76,7 +81,7 @@ func (a *App) makeTaskJob(task *domain.Task, try int) func() {
 				a.log.Error("task reached retry limit", err)
 			}
 		}
-		a.log.Info("task result", fmt.Sprint(result))
+		a.log.Info("task result", fmt.Sprint(ti))
 		// save results to db
 
 		// update task instance
@@ -117,7 +122,12 @@ func (a *App) loadTasksPresets() error {
 			a.log.Fatal("failed to create task", err)
 		}
 
-		// add saving to db
+		// add saving to db, should have id after that
+		task, err = a.repo.CreateOrUpdateTask(context.Background(), task)
+		if err != nil {
+			a.log.Fatal("failed to save task to db", err)
+		}
+
 		a.tasks = append(a.tasks, task)
 		a.log.Info("loaded task", fmt.Sprintf("%+v", task))
 	}

@@ -11,19 +11,20 @@ type (
 		GetString(string) (string, bool)
 		GetFloat(string) (float64, bool)
 		GetInt(string) (int, bool)
+		ToMap() map[string]interface{}
 	}
 
 	Task struct {
-		ID          int                                                   `json:"id"`
-		Type        string                                                `json:"type"`
-		Code        string                                                `json:"code"`
-		Title       string                                                `json:"title"`
-		Description string                                                `json:"description"`
-		Active      bool                                                  `json:"active"`
-		Display     bool                                                  `json:"display"`
-		Schedule    string                                                `json:"schedule"`
-		Args        TaskArgs                                              `json:"-"`
-		ResolveFn   func(context.Context, *Task, TaskArgs) (*Item, error) `json:"-"`
+		ID          int                                                                `json:"id"`
+		Type        string                                                             `json:"type"`
+		Code        string                                                             `json:"code"`
+		Title       string                                                             `json:"title"`
+		Description string                                                             `json:"description"`
+		Active      bool                                                               `json:"active"`
+		Display     bool                                                               `json:"display"`
+		Schedule    string                                                             `json:"schedule"`
+		Args        TaskArgs                                                           `json:"-"`
+		ResolveFn   func(context.Context, *Task, *TaskInstance) (*TaskInstance, error) `json:"-"`
 	}
 
 	TaskInstance struct {
@@ -33,6 +34,8 @@ type (
 		EndTime   time.Time
 		Success   bool
 		Error     error
+		Items     []*Item
+		Meta      map[string]interface{}
 	}
 
 	Item struct {

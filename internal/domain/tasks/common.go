@@ -25,3 +25,17 @@ func requireFloat(args map[string]interface{}, arg string) (float64, error) {
 
 	return ret, nil
 }
+
+func maybeFloat(args map[string]interface{}, arg string) float64 {
+	v, ok := args[arg]
+	if !ok {
+		return 0
+	}
+
+	ret, ok := v.(float64)
+	if !ok {
+		return 0
+	}
+
+	return ret
+}

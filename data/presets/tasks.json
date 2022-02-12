@@ -5,7 +5,7 @@
         "title": "Random 1",
         "description": "random task for testing purposes",
         "active": true,
-        "schedule": "1h",
+        "schedule": "1m",
         "args": {
             "min": 1,
             "max": 10
@@ -17,7 +17,7 @@
         "title": "Random 2",
         "description": "another random task for testing purposes",
         "active": true,
-        "schedule": "2h",
+        "schedule": "2m",
         "args": {
             "min": 100,
             "max": 99999
@@ -29,7 +29,7 @@
         "title": "Failing",
         "description": "failing task for testing purposes",
         "active": true,
-        "schedule": "1m",
+        "schedule": "10m",
         "args": {}
     }
 ]

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DanielTitkov/dashboars/internal/domain"
+	"github.com/DanielTitkov/dashboars/internal/util"
 )
 
 const (
@@ -18,23 +19,31 @@ type RandomTaskArgs struct {
 	Max float64 `json:"max"`
 }
 
-func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
-	min, err := requireFloat(args.Args, argMin)
+func randomTaskArgsFromMap(args map[string]interface{}) (*RandomTaskArgs, error) {
+	min, err := requireFloat(args, argMin)
 	if err != nil {
 		return nil, err
 	}
 
-	max, err := requireFloat(args.Args, argMax)
+	max, err := requireFloat(args, argMax)
 	if err != nil {
 		return nil, err
 	}
 
-	taskArgs := RandomTaskArgs{
+	return &RandomTaskArgs{
 		Max: max,
 		Min: min,
+	}, nil
+}
+
+func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
+	taskArgs, err := randomTaskArgsFromMap(args.Args)
+	if err != nil {
+		return nil, err
 	}
 
 	return &domain.Task{
+		ID:          args.ID,
 		Type:        args.Type,
 		Code:        args.Code,
 		Title:       args.Title,
@@ -42,7 +51,7 @@ func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
 		Active:      args.Active,
 		Display:     args.Display,
 		Schedule:    args.Schedule,
-		Args:        &taskArgs,
+		Args:        taskArgs,
 		ResolveFn:   RandomTaskResolveFn,
 	}, nil
 }
@@ -58,9 +67,9 @@ func (a *RandomTaskArgs) GetString(string) (string, bool) {
 
 func (a *RandomTaskArgs) GetFloat(s string) (float64, bool) {
 	switch s {
-	case "min":
+	case argMin:
 		return a.Min, true
-	case "max":
+	case argMax:
 		return a.Max, true
 	default:
 		return 0, false
@@ -71,21 +80,26 @@ func (a *RandomTaskArgs) GetInt(string) (int, bool) {
 	return 0, false
 }
 
-func RandomTaskResolveFn(ctx context.Context, t *domain.Task, args domain.TaskArgs) (*domain.Item, error) {
-	min, ok := args.GetFloat("min")
+func (a *RandomTaskArgs) ToMap() map[string]interface{} {
+	return util.ToMap(a)
+}
+
+func RandomTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskInstance) (*domain.TaskInstance, error) {
+	min, ok := t.Args.GetFloat(argMin)
 	if !ok {
-		return nil, newArgError("min")
+		return ti.WithError(newArgError(argMin)), newArgError(argMin)
 	}
 
-	max, ok := args.GetFloat("max")
+	max, ok := t.Args.GetFloat(argMax)
 	if !ok {
-		return nil, newArgError("max")
+		return ti.WithError(newArgError(argMax)), newArgError(argMax)
 	}
 
-	v := min + rand.Float64()*(max-min)
-	return &domain.Item{
-		Value:     v,
+	i := &domain.Item{
+		Value:     min + rand.Float64()*(max-min),
 		Timestamp: time.Now(),
 		Meta:      make(map[string]interface{}),
-	}, nil
+	}
+
+	return ti.WithSuccess([]*domain.Item{i}), nil
 }

@@ -41,6 +41,7 @@ func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
 		Description: args.Description,
 		Active:      args.Active,
 		Display:     args.Display,
+		Schedule:    args.Schedule,
 		Args:        &taskArgs,
 		ResolveFn:   RandomTaskResolveFn,
 	}, nil

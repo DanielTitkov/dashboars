@@ -1,5 +1,6 @@
 package domain
 
 const (
-	TaskTypeRandom = "random"
+	TaskTypeRandom  = "random"
+	TaskTypeFailing = "failing"
 )

@@ -9,6 +9,7 @@ type (
 		Description string                 `json:"description"`
 		Active      bool                   `json:"active"`
 		Display     bool                   `json:"display"`
+		Schedule    string                 `json:"schedule"`
 		Args        map[string]interface{} `json:"args"`
 	}
 )

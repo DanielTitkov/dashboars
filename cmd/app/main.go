@@ -36,11 +36,6 @@ func main() {
 		logger.Fatal("failed to init app", err)
 	}
 
-	err = a.LoadTasksPresets()
-	if err != nil {
-		logger.Fatal("failed load tasks", err)
-	}
-
 	h := handler.NewHandler(
 		a,
 		logger,

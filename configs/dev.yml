@@ -1,10 +1,15 @@
-env: dev
+env: dev1
 db:
   uri: "host=localhost port=5432 user=test dbname=crudapi password=pass sslmode=disable"
   driver: postgres
 server:
   port: 8000
   host: "0.0.0.0"
+task:
+  defaultSchedule: "1d"
+  defaultRetryNumber: 3
+  defaultRetryDelay: "5s"
+  maxConcurrency: 10
 data:
   presets:
     tasksPresetsPath: ./data/presets/tasks.json

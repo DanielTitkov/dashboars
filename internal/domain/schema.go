@@ -21,6 +21,7 @@ type (
 		Description string                                                `json:"description"`
 		Active      bool                                                  `json:"active"`
 		Display     bool                                                  `json:"display"`
+		Schedule    string                                                `json:"schedule"`
 		Args        TaskArgs                                              `json:"-"`
 		ResolveFn   func(context.Context, *Task, TaskArgs) (*Item, error) `json:"-"`
 	}

@@ -10,6 +10,8 @@ func getTaskConstructorFn(args domain.CreateTaskArgs) (func(domain.CreateTaskArg
 	switch args.Type {
 	case domain.TaskTypeRandom:
 		return NewRandomTask, nil
+	case domain.TaskTypeFailing:
+		return NewFailingTask, nil
 	default:
 		return nil, errors.New("unknown task type: " + args.Type)
 	}

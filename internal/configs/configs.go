@@ -11,6 +11,7 @@ type Config struct {
 	DB     DBConfig
 	Server ServerConfig
 	Data   DataConfig
+	Task   TaskConfig
 }
 
 func ReadConfigs(path string) (Config, error) {

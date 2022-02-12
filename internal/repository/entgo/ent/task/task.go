@@ -32,8 +32,17 @@ const (
 	FieldSchedule = "schedule"
 	// FieldArgs holds the string denoting the args field in the database.
 	FieldArgs = "args"
+	// EdgeInstances holds the string denoting the instances edge name in mutations.
+	EdgeInstances = "instances"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
+	// InstancesTable is the table that holds the instances relation/edge.
+	InstancesTable = "task_instances"
+	// InstancesInverseTable is the table name for the TaskInstance entity.
+	// It exists in this package in order to avoid circular dependency with the "taskinstance" package.
+	InstancesInverseTable = "task_instances"
+	// InstancesColumn is the table column denoting the instances relation/edge.
+	InstancesColumn = "task_instances"
 )
 
 // Columns holds all SQL columns for task fields.

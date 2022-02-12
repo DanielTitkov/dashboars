@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
 // TaskCreate is the builder for creating a Task entity.
@@ -126,6 +127,21 @@ func (tc *TaskCreate) SetNillableSchedule(s *string) *TaskCreate {
 func (tc *TaskCreate) SetArgs(m map[string]interface{}) *TaskCreate {
 	tc.mutation.SetArgs(m)
 	return tc
+}
+
+// AddInstanceIDs adds the "instances" edge to the TaskInstance entity by IDs.
+func (tc *TaskCreate) AddInstanceIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddInstanceIDs(ids...)
+	return tc
+}
+
+// AddInstances adds the "instances" edges to the TaskInstance entity.
+func (tc *TaskCreate) AddInstances(t ...*TaskInstance) *TaskCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddInstanceIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -366,6 +382,25 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Column: task.FieldArgs,
 		})
 		_node.Args = value
+	}
+	if nodes := tc.mutation.InstancesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
 // TaskQuery is the builder for querying Task entities.
@@ -24,6 +26,8 @@ type TaskQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Task
+	// eager-loading edges.
+	withInstances *TaskInstanceQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (tq *TaskQuery) Unique(unique bool) *TaskQuery {
 func (tq *TaskQuery) Order(o ...OrderFunc) *TaskQuery {
 	tq.order = append(tq.order, o...)
 	return tq
+}
+
+// QueryInstances chains the current query on the "instances" edge.
+func (tq *TaskQuery) QueryInstances() *TaskInstanceQuery {
+	query := &TaskInstanceQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.InstancesTable, task.InstancesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Task entity from the query.
@@ -236,15 +262,27 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		return nil
 	}
 	return &TaskQuery{
-		config:     tq.config,
-		limit:      tq.limit,
-		offset:     tq.offset,
-		order:      append([]OrderFunc{}, tq.order...),
-		predicates: append([]predicate.Task{}, tq.predicates...),
+		config:        tq.config,
+		limit:         tq.limit,
+		offset:        tq.offset,
+		order:         append([]OrderFunc{}, tq.order...),
+		predicates:    append([]predicate.Task{}, tq.predicates...),
+		withInstances: tq.withInstances.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
 	}
+}
+
+// WithInstances tells the query-builder to eager-load the nodes that are connected to
+// the "instances" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithInstances(opts ...func(*TaskInstanceQuery)) *TaskQuery {
+	query := &TaskInstanceQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withInstances = query
+	return tq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,8 +348,11 @@ func (tq *TaskQuery) prepareQuery(ctx context.Context) error {
 
 func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 	var (
-		nodes = []*Task{}
-		_spec = tq.querySpec()
+		nodes       = []*Task{}
+		_spec       = tq.querySpec()
+		loadedTypes = [1]bool{
+			tq.withInstances != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Task{config: tq.config}
@@ -323,6 +364,7 @@ func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, tq.driver, _spec); err != nil {
@@ -331,6 +373,36 @@ func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := tq.withInstances; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Task)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Instances = []*TaskInstance{}
+		}
+		query.withFKs = true
+		query.Where(predicate.TaskInstance(func(s *sql.Selector) {
+			s.Where(sql.InValues(task.InstancesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.task_instances
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "task_instances" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "task_instances" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Instances = append(node.Edges.Instances, n)
+		}
+	}
+
 	return nodes, nil
 }
 

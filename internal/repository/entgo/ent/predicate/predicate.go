@@ -6,5 +6,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Item is the predicate function for item builders.
+type Item func(*sql.Selector)
+
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
+
+// TaskInstance is the predicate function for taskinstance builders.
+type TaskInstance func(*sql.Selector)

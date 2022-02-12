@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
 // TaskUpdate is the builder for updating Task entities.
@@ -120,9 +121,45 @@ func (tu *TaskUpdate) ClearArgs() *TaskUpdate {
 	return tu
 }
 
+// AddInstanceIDs adds the "instances" edge to the TaskInstance entity by IDs.
+func (tu *TaskUpdate) AddInstanceIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddInstanceIDs(ids...)
+	return tu
+}
+
+// AddInstances adds the "instances" edges to the TaskInstance entity.
+func (tu *TaskUpdate) AddInstances(t ...*TaskInstance) *TaskUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddInstanceIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
+}
+
+// ClearInstances clears all "instances" edges to the TaskInstance entity.
+func (tu *TaskUpdate) ClearInstances() *TaskUpdate {
+	tu.mutation.ClearInstances()
+	return tu
+}
+
+// RemoveInstanceIDs removes the "instances" edge to TaskInstance entities by IDs.
+func (tu *TaskUpdate) RemoveInstanceIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveInstanceIDs(ids...)
+	return tu
+}
+
+// RemoveInstances removes "instances" edges to TaskInstance entities.
+func (tu *TaskUpdate) RemoveInstances(t ...*TaskInstance) *TaskUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveInstanceIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -294,6 +331,60 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: task.FieldArgs,
 		})
 	}
+	if tu.mutation.InstancesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedInstancesIDs(); len(nodes) > 0 && !tu.mutation.InstancesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.InstancesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -405,9 +496,45 @@ func (tuo *TaskUpdateOne) ClearArgs() *TaskUpdateOne {
 	return tuo
 }
 
+// AddInstanceIDs adds the "instances" edge to the TaskInstance entity by IDs.
+func (tuo *TaskUpdateOne) AddInstanceIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddInstanceIDs(ids...)
+	return tuo
+}
+
+// AddInstances adds the "instances" edges to the TaskInstance entity.
+func (tuo *TaskUpdateOne) AddInstances(t ...*TaskInstance) *TaskUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddInstanceIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
+}
+
+// ClearInstances clears all "instances" edges to the TaskInstance entity.
+func (tuo *TaskUpdateOne) ClearInstances() *TaskUpdateOne {
+	tuo.mutation.ClearInstances()
+	return tuo
+}
+
+// RemoveInstanceIDs removes the "instances" edge to TaskInstance entities by IDs.
+func (tuo *TaskUpdateOne) RemoveInstanceIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveInstanceIDs(ids...)
+	return tuo
+}
+
+// RemoveInstances removes "instances" edges to TaskInstance entities.
+func (tuo *TaskUpdateOne) RemoveInstances(t ...*TaskInstance) *TaskUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveInstanceIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -602,6 +729,60 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Type:   field.TypeJSON,
 			Column: task.FieldArgs,
 		})
+	}
+	if tuo.mutation.InstancesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedInstancesIDs(); len(nodes) > 0 && !tuo.mutation.InstancesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.InstancesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.InstancesTable,
+			Columns: []string{task.InstancesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Task{config: tuo.config}
 	_spec.Assign = _node.assignValues

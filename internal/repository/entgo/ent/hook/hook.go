@@ -9,6 +9,19 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent"
 )
 
+// The ItemFunc type is an adapter to allow the use of ordinary
+// function as Item mutator.
+type ItemFunc func(context.Context, *ent.ItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ItemMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The TaskFunc type is an adapter to allow the use of ordinary
 // function as Task mutator.
 type TaskFunc func(context.Context, *ent.TaskMutation) (ent.Value, error)
@@ -18,6 +31,19 @@ func (f TaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.TaskMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The TaskInstanceFunc type is an adapter to allow the use of ordinary
+// function as TaskInstance mutator.
+type TaskInstanceFunc func(context.Context, *ent.TaskInstanceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TaskInstanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.TaskInstanceMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskInstanceMutation", m)
 	}
 	return f(ctx, mv)
 }

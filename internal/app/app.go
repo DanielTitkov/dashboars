@@ -25,6 +25,8 @@ type (
 	}
 	Repository interface {
 		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)
+		CreateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
+		UpdateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
 	}
 )
 
@@ -35,7 +37,7 @@ func New(
 ) (*App, error) {
 	s := gocron.NewScheduler(time.UTC)
 	s.SetMaxConcurrentJobs(cfg.Task.MaxConcurrency, gocron.WaitMode)
-	s.WaitForScheduleAll()
+	// s.WaitForScheduleAll()
 
 	app := App{
 		cfg:       cfg,
@@ -61,19 +63,22 @@ func New(
 	return &app, nil
 }
 
-func (a *App) makeTaskJob(task *domain.Task, try int) func() {
+func (a *App) makeTaskJob(task *domain.Task, attempt int) func() {
 	return func() {
 		// create task instance in db
-		ti := &domain.TaskInstance{}
+		ti := domain.InitTaskInstance(task.ID, attempt)
+		ti, err := a.repo.CreateTaskInstance(context.Background(), ti)
+		if err != nil {
+			a.log.Error("failed save new task instance to db", err)
+		}
 
 		// run resolve func
-		a.log.Info(fmt.Sprintf("resolving task, attempt %d", try), task.Code)
-		ti, err := task.ResolveFn(context.TODO(), task, ti)
+		a.log.Debug(fmt.Sprintf("resolving task, attempt %d", attempt), task.Code)
+		ti, err = task.ResolveFn(context.TODO(), task, ti)
 		if err != nil {
 			a.log.Error("task failed", err)
-			if try < a.cfg.Task.DefaultRetryNumber {
-				a.log.Info("scheduling retry", "")
-				_, err := a.scheduler.Every(a.cfg.Task.DefaultRetryDelay).LimitRunsTo(1).WaitForSchedule().Do(a.makeTaskJob(task, try+1))
+			if attempt < a.cfg.Task.DefaultRetryNumber {
+				_, err := a.scheduler.Every(a.cfg.Task.DefaultRetryDelay).LimitRunsTo(1).WaitForSchedule().Do(a.makeTaskJob(task, attempt+1))
 				if err != nil {
 					a.log.Error("failed to schedule retry", err)
 				}
@@ -81,15 +86,23 @@ func (a *App) makeTaskJob(task *domain.Task, try int) func() {
 				a.log.Error("task reached retry limit", err)
 			}
 		}
-		a.log.Info("task result", fmt.Sprint(ti))
-		// save results to db
 
-		// update task instance
+		// save results to db
+		ti, err = a.repo.UpdateTaskInstance(context.TODO(), ti)
+		if err != nil {
+			a.log.Error("failed to save updated task instance to db", err)
+		}
+
+		a.log.Debug("task result", fmt.Sprintf("%+v", ti))
 	}
 }
 
 func (a *App) scheduleTasks() error {
 	for _, t := range a.tasks {
+		if !t.Active {
+			continue
+		}
+
 		_, err := a.scheduler.Every(t.Schedule).Tag(t.Code, t.Type).Do(a.makeTaskJob(t, 0))
 		if err != nil {
 			return err

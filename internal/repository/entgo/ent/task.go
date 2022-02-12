@@ -37,6 +37,27 @@ type Task struct {
 	Schedule string `json:"schedule,omitempty"`
 	// Args holds the value of the "args" field.
 	Args map[string]interface{} `json:"args,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the TaskQuery when eager-loading is set.
+	Edges TaskEdges `json:"edges"`
+}
+
+// TaskEdges holds the relations/edges for other nodes in the graph.
+type TaskEdges struct {
+	// Instances holds the value of the instances edge.
+	Instances []*TaskInstance `json:"instances,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// InstancesOrErr returns the Instances value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) InstancesOrErr() ([]*TaskInstance, error) {
+	if e.loadedTypes[0] {
+		return e.Instances, nil
+	}
+	return nil, &NotLoadedError{edge: "instances"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -140,6 +161,11 @@ func (t *Task) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryInstances queries the "instances" edge of the Task entity.
+func (t *Task) QueryInstances() *TaskInstanceQuery {
+	return (&TaskClient{config: t.config}).QueryInstances(t)
 }
 
 // Update returns a builder for updating this Task.

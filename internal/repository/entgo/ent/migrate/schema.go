@@ -8,6 +8,30 @@ import (
 )
 
 var (
+	// ItemsColumns holds the columns for the "items" table.
+	ItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "value", Type: field.TypeFloat64},
+		{Name: "timestamp", Type: field.TypeTime},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+		{Name: "task_instance_items", Type: field.TypeInt, Nullable: true},
+	}
+	// ItemsTable holds the schema information for the "items" table.
+	ItemsTable = &schema.Table{
+		Name:       "items",
+		Columns:    ItemsColumns,
+		PrimaryKey: []*schema.Column{ItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "items_task_instances_items",
+				Columns:    []*schema.Column{ItemsColumns[6]},
+				RefColumns: []*schema.Column{TaskInstancesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// TasksColumns holds the columns for the "tasks" table.
 	TasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -28,11 +52,43 @@ var (
 		Columns:    TasksColumns,
 		PrimaryKey: []*schema.Column{TasksColumns[0]},
 	}
+	// TaskInstancesColumns holds the columns for the "task_instances" table.
+	TaskInstancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "start_time", Type: field.TypeTime},
+		{Name: "end_time", Type: field.TypeTime, Nullable: true},
+		{Name: "attempt", Type: field.TypeInt, Default: 0},
+		{Name: "success", Type: field.TypeBool, Nullable: true},
+		{Name: "running", Type: field.TypeBool, Default: false},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+		{Name: "task_instances", Type: field.TypeInt, Nullable: true},
+	}
+	// TaskInstancesTable holds the schema information for the "task_instances" table.
+	TaskInstancesTable = &schema.Table{
+		Name:       "task_instances",
+		Columns:    TaskInstancesColumns,
+		PrimaryKey: []*schema.Column{TaskInstancesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "task_instances_tasks_instances",
+				Columns:    []*schema.Column{TaskInstancesColumns[10]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ItemsTable,
 		TasksTable,
+		TaskInstancesTable,
 	}
 )
 
 func init() {
+	ItemsTable.ForeignKeys[0].RefTable = TaskInstancesTable
+	TaskInstancesTable.ForeignKeys[0].RefTable = TasksTable
 }

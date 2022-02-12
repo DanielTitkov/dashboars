@@ -33,7 +33,9 @@ type (
 		StartTime time.Time
 		EndTime   time.Time
 		Success   bool
+		Running   bool
 		Error     error
+		Attempt   int
 		Items     []*Item
 		Meta      map[string]interface{}
 	}

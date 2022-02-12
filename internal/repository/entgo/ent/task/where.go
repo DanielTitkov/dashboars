@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 )
 
@@ -859,6 +860,34 @@ func ArgsIsNil() predicate.Task {
 func ArgsNotNil() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldArgs)))
+	})
+}
+
+// HasInstances applies the HasEdge predicate on the "instances" edge.
+func HasInstances() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InstancesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, InstancesTable, InstancesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInstancesWith applies the HasEdge predicate on the "instances" edge with a given conditions (other predicates).
+func HasInstancesWith(preds ...predicate.TaskInstance) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InstancesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, InstancesTable, InstancesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

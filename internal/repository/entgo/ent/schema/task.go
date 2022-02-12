@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 	"github.com/DanielTitkov/dashboars/internal/domain"
@@ -31,7 +32,10 @@ func (Task) Fields() []ent.Field {
 
 // Edges of the Task.
 func (Task) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		// has
+		edge.To("instances", TaskInstance.Type),
+	}
 }
 
 func (Task) Mixin() []ent.Mixin {

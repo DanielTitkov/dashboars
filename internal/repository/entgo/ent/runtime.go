@@ -5,14 +5,35 @@ package ent
 import (
 	"time"
 
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/schema"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	itemMixin := schema.Item{}.Mixin()
+	itemMixinFields0 := itemMixin[0].Fields()
+	_ = itemMixinFields0
+	itemFields := schema.Item{}.Fields()
+	_ = itemFields
+	// itemDescCreateTime is the schema descriptor for create_time field.
+	itemDescCreateTime := itemMixinFields0[0].Descriptor()
+	// item.DefaultCreateTime holds the default value on creation for the create_time field.
+	item.DefaultCreateTime = itemDescCreateTime.Default.(func() time.Time)
+	// itemDescUpdateTime is the schema descriptor for update_time field.
+	itemDescUpdateTime := itemMixinFields0[1].Descriptor()
+	// item.DefaultUpdateTime holds the default value on creation for the update_time field.
+	item.DefaultUpdateTime = itemDescUpdateTime.Default.(func() time.Time)
+	// item.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	item.UpdateDefaultUpdateTime = itemDescUpdateTime.UpdateDefault.(func() time.Time)
+	// itemDescTimestamp is the schema descriptor for timestamp field.
+	itemDescTimestamp := itemFields[1].Descriptor()
+	// item.DefaultTimestamp holds the default value on creation for the timestamp field.
+	item.DefaultTimestamp = itemDescTimestamp.Default.(func() time.Time)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0
@@ -48,4 +69,31 @@ func init() {
 	taskDescDisplay := taskFields[5].Descriptor()
 	// task.DefaultDisplay holds the default value on creation for the display field.
 	task.DefaultDisplay = taskDescDisplay.Default.(bool)
+	taskinstanceMixin := schema.TaskInstance{}.Mixin()
+	taskinstanceMixinFields0 := taskinstanceMixin[0].Fields()
+	_ = taskinstanceMixinFields0
+	taskinstanceFields := schema.TaskInstance{}.Fields()
+	_ = taskinstanceFields
+	// taskinstanceDescCreateTime is the schema descriptor for create_time field.
+	taskinstanceDescCreateTime := taskinstanceMixinFields0[0].Descriptor()
+	// taskinstance.DefaultCreateTime holds the default value on creation for the create_time field.
+	taskinstance.DefaultCreateTime = taskinstanceDescCreateTime.Default.(func() time.Time)
+	// taskinstanceDescUpdateTime is the schema descriptor for update_time field.
+	taskinstanceDescUpdateTime := taskinstanceMixinFields0[1].Descriptor()
+	// taskinstance.DefaultUpdateTime holds the default value on creation for the update_time field.
+	taskinstance.DefaultUpdateTime = taskinstanceDescUpdateTime.Default.(func() time.Time)
+	// taskinstance.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	taskinstance.UpdateDefaultUpdateTime = taskinstanceDescUpdateTime.UpdateDefault.(func() time.Time)
+	// taskinstanceDescStartTime is the schema descriptor for start_time field.
+	taskinstanceDescStartTime := taskinstanceFields[0].Descriptor()
+	// taskinstance.DefaultStartTime holds the default value on creation for the start_time field.
+	taskinstance.DefaultStartTime = taskinstanceDescStartTime.Default.(func() time.Time)
+	// taskinstanceDescAttempt is the schema descriptor for attempt field.
+	taskinstanceDescAttempt := taskinstanceFields[2].Descriptor()
+	// taskinstance.DefaultAttempt holds the default value on creation for the attempt field.
+	taskinstance.DefaultAttempt = taskinstanceDescAttempt.Default.(int)
+	// taskinstanceDescRunning is the schema descriptor for running field.
+	taskinstanceDescRunning := taskinstanceFields[4].Descriptor()
+	// taskinstance.DefaultRunning holds the default value on creation for the running field.
+	taskinstance.DefaultRunning = taskinstanceDescRunning.Default.(bool)
 }

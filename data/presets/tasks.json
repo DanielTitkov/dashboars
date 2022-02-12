@@ -28,7 +28,7 @@
         "code": "fail",
         "title": "Failing",
         "description": "failing task for testing purposes",
-        "active": true,
+        "active": false,
         "schedule": "10m",
         "args": {}
     }

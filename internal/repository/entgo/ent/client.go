@@ -9,10 +9,13 @@ import (
 
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/migrate"
 
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -20,8 +23,12 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Item is the client for interacting with the Item builders.
+	Item *ItemClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskInstance is the client for interacting with the TaskInstance builders.
+	TaskInstance *TaskInstanceClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -35,7 +42,9 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Item = NewItemClient(c.config)
 	c.Task = NewTaskClient(c.config)
+	c.TaskInstance = NewTaskInstanceClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -67,9 +76,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Task:   NewTaskClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Item:         NewItemClient(cfg),
+		Task:         NewTaskClient(cfg),
+		TaskInstance: NewTaskInstanceClient(cfg),
 	}, nil
 }
 
@@ -87,16 +98,18 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Task:   NewTaskClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Item:         NewItemClient(cfg),
+		Task:         NewTaskClient(cfg),
+		TaskInstance: NewTaskInstanceClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Task.
+//		Item.
 //		Query().
 //		Count(ctx)
 //
@@ -119,7 +132,115 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Item.Use(hooks...)
 	c.Task.Use(hooks...)
+	c.TaskInstance.Use(hooks...)
+}
+
+// ItemClient is a client for the Item schema.
+type ItemClient struct {
+	config
+}
+
+// NewItemClient returns a client for the Item from the given config.
+func NewItemClient(c config) *ItemClient {
+	return &ItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `item.Hooks(f(g(h())))`.
+func (c *ItemClient) Use(hooks ...Hook) {
+	c.hooks.Item = append(c.hooks.Item, hooks...)
+}
+
+// Create returns a create builder for Item.
+func (c *ItemClient) Create() *ItemCreate {
+	mutation := newItemMutation(c.config, OpCreate)
+	return &ItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Item entities.
+func (c *ItemClient) CreateBulk(builders ...*ItemCreate) *ItemCreateBulk {
+	return &ItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Item.
+func (c *ItemClient) Update() *ItemUpdate {
+	mutation := newItemMutation(c.config, OpUpdate)
+	return &ItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ItemClient) UpdateOne(i *Item) *ItemUpdateOne {
+	mutation := newItemMutation(c.config, OpUpdateOne, withItem(i))
+	return &ItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ItemClient) UpdateOneID(id int) *ItemUpdateOne {
+	mutation := newItemMutation(c.config, OpUpdateOne, withItemID(id))
+	return &ItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Item.
+func (c *ItemClient) Delete() *ItemDelete {
+	mutation := newItemMutation(c.config, OpDelete)
+	return &ItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ItemClient) DeleteOne(i *Item) *ItemDeleteOne {
+	return c.DeleteOneID(i.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ItemClient) DeleteOneID(id int) *ItemDeleteOne {
+	builder := c.Delete().Where(item.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ItemDeleteOne{builder}
+}
+
+// Query returns a query builder for Item.
+func (c *ItemClient) Query() *ItemQuery {
+	return &ItemQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Item entity by its id.
+func (c *ItemClient) Get(ctx context.Context, id int) (*Item, error) {
+	return c.Query().Where(item.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ItemClient) GetX(ctx context.Context, id int) *Item {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTaskInstance queries the task_instance edge of a Item.
+func (c *ItemClient) QueryTaskInstance(i *Item) *TaskInstanceQuery {
+	query := &TaskInstanceQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.TaskInstanceTable, item.TaskInstanceColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ItemClient) Hooks() []Hook {
+	return c.hooks.Item
 }
 
 // TaskClient is a client for the Task schema.
@@ -207,7 +328,145 @@ func (c *TaskClient) GetX(ctx context.Context, id int) *Task {
 	return obj
 }
 
+// QueryInstances queries the instances edge of a Task.
+func (c *TaskClient) QueryInstances(t *Task) *TaskInstanceQuery {
+	query := &TaskInstanceQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.InstancesTable, task.InstancesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
+}
+
+// TaskInstanceClient is a client for the TaskInstance schema.
+type TaskInstanceClient struct {
+	config
+}
+
+// NewTaskInstanceClient returns a client for the TaskInstance from the given config.
+func NewTaskInstanceClient(c config) *TaskInstanceClient {
+	return &TaskInstanceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `taskinstance.Hooks(f(g(h())))`.
+func (c *TaskInstanceClient) Use(hooks ...Hook) {
+	c.hooks.TaskInstance = append(c.hooks.TaskInstance, hooks...)
+}
+
+// Create returns a create builder for TaskInstance.
+func (c *TaskInstanceClient) Create() *TaskInstanceCreate {
+	mutation := newTaskInstanceMutation(c.config, OpCreate)
+	return &TaskInstanceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TaskInstance entities.
+func (c *TaskInstanceClient) CreateBulk(builders ...*TaskInstanceCreate) *TaskInstanceCreateBulk {
+	return &TaskInstanceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TaskInstance.
+func (c *TaskInstanceClient) Update() *TaskInstanceUpdate {
+	mutation := newTaskInstanceMutation(c.config, OpUpdate)
+	return &TaskInstanceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TaskInstanceClient) UpdateOne(ti *TaskInstance) *TaskInstanceUpdateOne {
+	mutation := newTaskInstanceMutation(c.config, OpUpdateOne, withTaskInstance(ti))
+	return &TaskInstanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TaskInstanceClient) UpdateOneID(id int) *TaskInstanceUpdateOne {
+	mutation := newTaskInstanceMutation(c.config, OpUpdateOne, withTaskInstanceID(id))
+	return &TaskInstanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TaskInstance.
+func (c *TaskInstanceClient) Delete() *TaskInstanceDelete {
+	mutation := newTaskInstanceMutation(c.config, OpDelete)
+	return &TaskInstanceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TaskInstanceClient) DeleteOne(ti *TaskInstance) *TaskInstanceDeleteOne {
+	return c.DeleteOneID(ti.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TaskInstanceClient) DeleteOneID(id int) *TaskInstanceDeleteOne {
+	builder := c.Delete().Where(taskinstance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TaskInstanceDeleteOne{builder}
+}
+
+// Query returns a query builder for TaskInstance.
+func (c *TaskInstanceClient) Query() *TaskInstanceQuery {
+	return &TaskInstanceQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a TaskInstance entity by its id.
+func (c *TaskInstanceClient) Get(ctx context.Context, id int) (*TaskInstance, error) {
+	return c.Query().Where(taskinstance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TaskInstanceClient) GetX(ctx context.Context, id int) *TaskInstance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItems queries the items edge of a TaskInstance.
+func (c *TaskInstanceClient) QueryItems(ti *TaskInstance) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ti.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(taskinstance.Table, taskinstance.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, taskinstance.ItemsTable, taskinstance.ItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ti.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a TaskInstance.
+func (c *TaskInstanceClient) QueryTask(ti *TaskInstance) *TaskQuery {
+	query := &TaskQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ti.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(taskinstance.Table, taskinstance.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskinstance.TaskTable, taskinstance.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(ti.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TaskInstanceClient) Hooks() []Hook {
+	return c.hooks.TaskInstance
 }

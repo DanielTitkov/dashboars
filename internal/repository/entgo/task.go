@@ -60,6 +60,7 @@ func entToDomainCreateTaskArgs(t *ent.Task) domain.CreateTaskArgs {
 		Type:        t.Type.String(),
 		Title:       t.Title,
 		Display:     t.Display,
+		Active:      t.Active,
 		Description: t.Description,
 		Schedule:    t.Schedule,
 		Args:        t.Args,

@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
@@ -32,6 +33,7 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		item.Table:         item.ValidColumn,
+		metric.Table:       metric.ValidColumn,
 		task.Table:         task.ValidColumn,
 		taskinstance.Table: taskinstance.ValidColumn,
 	}

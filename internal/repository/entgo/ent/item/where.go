@@ -467,6 +467,34 @@ func HasTaskInstanceWith(preds ...predicate.TaskInstance) predicate.Item {
 	})
 }
 
+// HasMetric applies the HasEdge predicate on the "metric" edge.
+func HasMetric() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MetricTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, MetricTable, MetricColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMetricWith applies the HasEdge predicate on the "metric" edge with a given conditions (other predicates).
+func HasMetricWith(preds ...predicate.Metric) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MetricInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, MetricTable, MetricColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Item) predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {

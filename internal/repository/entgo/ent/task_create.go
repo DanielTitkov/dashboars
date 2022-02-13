@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
@@ -142,6 +143,21 @@ func (tc *TaskCreate) AddInstances(t ...*TaskInstance) *TaskCreate {
 		ids[i] = t[i].ID
 	}
 	return tc.AddInstanceIDs(ids...)
+}
+
+// AddMetricIDs adds the "metrics" edge to the Metric entity by IDs.
+func (tc *TaskCreate) AddMetricIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddMetricIDs(ids...)
+	return tc
+}
+
+// AddMetrics adds the "metrics" edges to the Metric entity.
+func (tc *TaskCreate) AddMetrics(m ...*Metric) *TaskCreate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return tc.AddMetricIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -394,6 +410,25 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.MetricsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
 				},
 			},
 		}

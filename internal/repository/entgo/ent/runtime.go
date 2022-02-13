@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/schema"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
@@ -34,6 +35,29 @@ func init() {
 	itemDescTimestamp := itemFields[1].Descriptor()
 	// item.DefaultTimestamp holds the default value on creation for the timestamp field.
 	item.DefaultTimestamp = itemDescTimestamp.Default.(func() time.Time)
+	metricMixin := schema.Metric{}.Mixin()
+	metricMixinFields0 := metricMixin[0].Fields()
+	_ = metricMixinFields0
+	metricFields := schema.Metric{}.Fields()
+	_ = metricFields
+	// metricDescCreateTime is the schema descriptor for create_time field.
+	metricDescCreateTime := metricMixinFields0[0].Descriptor()
+	// metric.DefaultCreateTime holds the default value on creation for the create_time field.
+	metric.DefaultCreateTime = metricDescCreateTime.Default.(func() time.Time)
+	// metricDescUpdateTime is the schema descriptor for update_time field.
+	metricDescUpdateTime := metricMixinFields0[1].Descriptor()
+	// metric.DefaultUpdateTime holds the default value on creation for the update_time field.
+	metric.DefaultUpdateTime = metricDescUpdateTime.Default.(func() time.Time)
+	// metric.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	metric.UpdateDefaultUpdateTime = metricDescUpdateTime.UpdateDefault.(func() time.Time)
+	// metricDescTitle is the schema descriptor for title field.
+	metricDescTitle := metricFields[0].Descriptor()
+	// metric.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	metric.TitleValidator = metricDescTitle.Validators[0].(func(string) error)
+	// metricDescDescription is the schema descriptor for description field.
+	metricDescDescription := metricFields[1].Descriptor()
+	// metric.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	metric.DescriptionValidator = metricDescDescription.Validators[0].(func(string) error)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0

@@ -95,11 +95,33 @@ func RandomTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 		return ti.WithError(newArgError(argMax)), newArgError(argMax)
 	}
 
-	i := &domain.Item{
-		Value:     min + rand.Float64()*(max-min),
-		Timestamp: time.Now(),
-		Meta:      make(map[string]interface{}),
+	metricRaw := &domain.Metric{
+		Title:       "Raw",
+		Description: "Random number as is",
+		TaskID:      t.ID,
 	}
 
-	return ti.WithSuccess([]*domain.Item{i}), nil
+	metricSquare := &domain.Metric{
+		Title:       "Square",
+		Description: "Random number squared",
+		TaskID:      t.ID,
+	}
+
+	v := min + rand.Float64()*(max-min)
+
+	itemRaw := &domain.Item{
+		Value:     v,
+		Timestamp: time.Now(),
+		Meta:      make(map[string]interface{}),
+		Metric:    metricRaw,
+	}
+
+	itemSquare := &domain.Item{
+		Value:     v * v,
+		Timestamp: time.Now(),
+		Meta:      make(map[string]interface{}),
+		Metric:    metricSquare,
+	}
+
+	return ti.WithSuccess([]*domain.Item{itemRaw, itemSquare}), nil
 }

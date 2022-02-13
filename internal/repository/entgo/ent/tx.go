@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// Metric is the client for interacting with the Metric builders.
+	Metric *MetricClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// TaskInstance is the client for interacting with the TaskInstance builders.
@@ -154,6 +156,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Item = NewItemClient(tx.config)
+	tx.Metric = NewMetricClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaskInstance = NewTaskInstanceClient(tx.config)
 }

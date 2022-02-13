@@ -28,6 +28,7 @@ func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
 		// belongs to
 		edge.From("task_instance", TaskInstance.Type).Ref("items").Unique().Required(),
+		edge.From("metric", Metric.Type).Ref("items").Unique().Required(),
 	}
 }
 

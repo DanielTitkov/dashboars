@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
@@ -85,6 +86,17 @@ func (iu *ItemUpdate) SetTaskInstance(t *TaskInstance) *ItemUpdate {
 	return iu.SetTaskInstanceID(t.ID)
 }
 
+// SetMetricID sets the "metric" edge to the Metric entity by ID.
+func (iu *ItemUpdate) SetMetricID(id int) *ItemUpdate {
+	iu.mutation.SetMetricID(id)
+	return iu
+}
+
+// SetMetric sets the "metric" edge to the Metric entity.
+func (iu *ItemUpdate) SetMetric(m *Metric) *ItemUpdate {
+	return iu.SetMetricID(m.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (iu *ItemUpdate) Mutation() *ItemMutation {
 	return iu.mutation
@@ -93,6 +105,12 @@ func (iu *ItemUpdate) Mutation() *ItemMutation {
 // ClearTaskInstance clears the "task_instance" edge to the TaskInstance entity.
 func (iu *ItemUpdate) ClearTaskInstance() *ItemUpdate {
 	iu.mutation.ClearTaskInstance()
+	return iu
+}
+
+// ClearMetric clears the "metric" edge to the Metric entity.
+func (iu *ItemUpdate) ClearMetric() *ItemUpdate {
+	iu.mutation.ClearMetric()
 	return iu
 }
 
@@ -169,6 +187,9 @@ func (iu *ItemUpdate) defaults() {
 func (iu *ItemUpdate) check() error {
 	if _, ok := iu.mutation.TaskInstanceID(); iu.mutation.TaskInstanceCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Item.task_instance"`)
+	}
+	if _, ok := iu.mutation.MetricID(); iu.mutation.MetricCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Item.metric"`)
 	}
 	return nil
 }
@@ -267,6 +288,41 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if iu.mutation.MetricCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.MetricTable,
+			Columns: []string{item.MetricColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.MetricIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.MetricTable,
+			Columns: []string{item.MetricColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, iu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{item.Label}
@@ -342,6 +398,17 @@ func (iuo *ItemUpdateOne) SetTaskInstance(t *TaskInstance) *ItemUpdateOne {
 	return iuo.SetTaskInstanceID(t.ID)
 }
 
+// SetMetricID sets the "metric" edge to the Metric entity by ID.
+func (iuo *ItemUpdateOne) SetMetricID(id int) *ItemUpdateOne {
+	iuo.mutation.SetMetricID(id)
+	return iuo
+}
+
+// SetMetric sets the "metric" edge to the Metric entity.
+func (iuo *ItemUpdateOne) SetMetric(m *Metric) *ItemUpdateOne {
+	return iuo.SetMetricID(m.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 	return iuo.mutation
@@ -350,6 +417,12 @@ func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 // ClearTaskInstance clears the "task_instance" edge to the TaskInstance entity.
 func (iuo *ItemUpdateOne) ClearTaskInstance() *ItemUpdateOne {
 	iuo.mutation.ClearTaskInstance()
+	return iuo
+}
+
+// ClearMetric clears the "metric" edge to the Metric entity.
+func (iuo *ItemUpdateOne) ClearMetric() *ItemUpdateOne {
+	iuo.mutation.ClearMetric()
 	return iuo
 }
 
@@ -433,6 +506,9 @@ func (iuo *ItemUpdateOne) defaults() {
 func (iuo *ItemUpdateOne) check() error {
 	if _, ok := iuo.mutation.TaskInstanceID(); iuo.mutation.TaskInstanceCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Item.task_instance"`)
+	}
+	if _, ok := iuo.mutation.MetricID(); iuo.mutation.MetricCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Item.metric"`)
 	}
 	return nil
 }
@@ -540,6 +616,41 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if iuo.mutation.MetricCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.MetricTable,
+			Columns: []string{item.MetricColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.MetricIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.MetricTable,
+			Columns: []string{item.MetricColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
 				},
 			},
 		}

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
@@ -84,6 +85,17 @@ func (ic *ItemCreate) SetTaskInstanceID(id int) *ItemCreate {
 // SetTaskInstance sets the "task_instance" edge to the TaskInstance entity.
 func (ic *ItemCreate) SetTaskInstance(t *TaskInstance) *ItemCreate {
 	return ic.SetTaskInstanceID(t.ID)
+}
+
+// SetMetricID sets the "metric" edge to the Metric entity by ID.
+func (ic *ItemCreate) SetMetricID(id int) *ItemCreate {
+	ic.mutation.SetMetricID(id)
+	return ic
+}
+
+// SetMetric sets the "metric" edge to the Metric entity.
+func (ic *ItemCreate) SetMetric(m *Metric) *ItemCreate {
+	return ic.SetMetricID(m.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -188,6 +200,9 @@ func (ic *ItemCreate) check() error {
 	if _, ok := ic.mutation.TaskInstanceID(); !ok {
 		return &ValidationError{Name: "task_instance", err: errors.New(`ent: missing required edge "Item.task_instance"`)}
 	}
+	if _, ok := ic.mutation.MetricID(); !ok {
+		return &ValidationError{Name: "metric", err: errors.New(`ent: missing required edge "Item.metric"`)}
+	}
 	return nil
 }
 
@@ -273,6 +288,26 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_instance_items = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ic.mutation.MetricIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.MetricTable,
+			Columns: []string{item.MetricColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.metric_items = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -35,6 +35,7 @@ func (Task) Edges() []ent.Edge {
 	return []ent.Edge{
 		// has
 		edge.To("instances", TaskInstance.Type),
+		edge.To("metrics", Metric.Type),
 	}
 }
 

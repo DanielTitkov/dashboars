@@ -40,9 +40,18 @@ type (
 		Meta      map[string]interface{}
 	}
 
+	Metric struct {
+		ID          int
+		TaskID      int
+		Title       string
+		Description string
+		Meta        map[string]interface{}
+	}
+
 	Item struct {
 		ID             int
 		TaskInstanceID int
+		Metric         *Metric
 		Value          float64
 		Timestamp      time.Time
 		Meta           map[string]interface{}

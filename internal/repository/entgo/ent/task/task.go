@@ -34,6 +34,8 @@ const (
 	FieldArgs = "args"
 	// EdgeInstances holds the string denoting the instances edge name in mutations.
 	EdgeInstances = "instances"
+	// EdgeMetrics holds the string denoting the metrics edge name in mutations.
+	EdgeMetrics = "metrics"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// InstancesTable is the table that holds the instances relation/edge.
@@ -43,6 +45,13 @@ const (
 	InstancesInverseTable = "task_instances"
 	// InstancesColumn is the table column denoting the instances relation/edge.
 	InstancesColumn = "task_instances"
+	// MetricsTable is the table that holds the metrics relation/edge.
+	MetricsTable = "metrics"
+	// MetricsInverseTable is the table name for the Metric entity.
+	// It exists in this package in order to avoid circular dependency with the "metric" package.
+	MetricsInverseTable = "metrics"
+	// MetricsColumn is the table column denoting the metrics relation/edge.
+	MetricsColumn = "task_metrics"
 )
 
 // Columns holds all SQL columns for task fields.

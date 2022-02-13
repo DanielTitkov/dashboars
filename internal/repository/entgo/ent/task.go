@@ -46,9 +46,11 @@ type Task struct {
 type TaskEdges struct {
 	// Instances holds the value of the instances edge.
 	Instances []*TaskInstance `json:"instances,omitempty"`
+	// Metrics holds the value of the metrics edge.
+	Metrics []*Metric `json:"metrics,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // InstancesOrErr returns the Instances value or an error if the edge
@@ -58,6 +60,15 @@ func (e TaskEdges) InstancesOrErr() ([]*TaskInstance, error) {
 		return e.Instances, nil
 	}
 	return nil, &NotLoadedError{edge: "instances"}
+}
+
+// MetricsOrErr returns the Metrics value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) MetricsOrErr() ([]*Metric, error) {
+	if e.loadedTypes[1] {
+		return e.Metrics, nil
+	}
+	return nil, &NotLoadedError{edge: "metrics"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -166,6 +177,11 @@ func (t *Task) assignValues(columns []string, values []interface{}) error {
 // QueryInstances queries the "instances" edge of the Task entity.
 func (t *Task) QueryInstances() *TaskInstanceQuery {
 	return (&TaskClient{config: t.config}).QueryInstances(t)
+}
+
+// QueryMetrics queries the "metrics" edge of the Task entity.
+func (t *Task) QueryMetrics() *MetricQuery {
+	return (&TaskClient{config: t.config}).QueryMetrics(t)
 }
 
 // Update returns a builder for updating this Task.

@@ -16,6 +16,7 @@ var (
 		{Name: "value", Type: field.TypeFloat64},
 		{Name: "timestamp", Type: field.TypeTime},
 		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+		{Name: "metric_items", Type: field.TypeInt, Nullable: true},
 		{Name: "task_instance_items", Type: field.TypeInt, Nullable: true},
 	}
 	// ItemsTable holds the schema information for the "items" table.
@@ -25,10 +26,47 @@ var (
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "items_task_instances_items",
+				Symbol:     "items_metrics_items",
 				Columns:    []*schema.Column{ItemsColumns[6]},
+				RefColumns: []*schema.Column{MetricsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "items_task_instances_items",
+				Columns:    []*schema.Column{ItemsColumns[7]},
 				RefColumns: []*schema.Column{TaskInstancesColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// MetricsColumns holds the columns for the "metrics" table.
+	MetricsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 280},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+		{Name: "task_metrics", Type: field.TypeInt, Nullable: true},
+	}
+	// MetricsTable holds the schema information for the "metrics" table.
+	MetricsTable = &schema.Table{
+		Name:       "metrics",
+		Columns:    MetricsColumns,
+		PrimaryKey: []*schema.Column{MetricsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "metrics_tasks_metrics",
+				Columns:    []*schema.Column{MetricsColumns[6]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "metric_title_task_metrics",
+				Unique:  true,
+				Columns: []*schema.Column{MetricsColumns[3], MetricsColumns[6]},
 			},
 		},
 	}
@@ -83,12 +121,15 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ItemsTable,
+		MetricsTable,
 		TasksTable,
 		TaskInstancesTable,
 	}
 )
 
 func init() {
-	ItemsTable.ForeignKeys[0].RefTable = TaskInstancesTable
+	ItemsTable.ForeignKeys[0].RefTable = MetricsTable
+	ItemsTable.ForeignKeys[1].RefTable = TaskInstancesTable
+	MetricsTable.ForeignKeys[0].RefTable = TasksTable
 	TaskInstancesTable.ForeignKeys[0].RefTable = TasksTable
 }

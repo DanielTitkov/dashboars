@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
@@ -27,6 +28,7 @@ type ItemQuery struct {
 	predicates []predicate.Item
 	// eager-loading edges.
 	withTaskInstance *TaskInstanceQuery
+	withMetric       *MetricQuery
 	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -79,6 +81,28 @@ func (iq *ItemQuery) QueryTaskInstance() *TaskInstanceQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, item.TaskInstanceTable, item.TaskInstanceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMetric chains the current query on the "metric" edge.
+func (iq *ItemQuery) QueryMetric() *MetricQuery {
+	query := &MetricQuery{config: iq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(metric.Table, metric.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.MetricTable, item.MetricColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +292,7 @@ func (iq *ItemQuery) Clone() *ItemQuery {
 		order:            append([]OrderFunc{}, iq.order...),
 		predicates:       append([]predicate.Item{}, iq.predicates...),
 		withTaskInstance: iq.withTaskInstance.Clone(),
+		withMetric:       iq.withMetric.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
 		path: iq.path,
@@ -282,6 +307,17 @@ func (iq *ItemQuery) WithTaskInstance(opts ...func(*TaskInstanceQuery)) *ItemQue
 		opt(query)
 	}
 	iq.withTaskInstance = query
+	return iq
+}
+
+// WithMetric tells the query-builder to eager-load the nodes that are connected to
+// the "metric" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *ItemQuery) WithMetric(opts ...func(*MetricQuery)) *ItemQuery {
+	query := &MetricQuery{config: iq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withMetric = query
 	return iq
 }
 
@@ -351,11 +387,12 @@ func (iq *ItemQuery) sqlAll(ctx context.Context) ([]*Item, error) {
 		nodes       = []*Item{}
 		withFKs     = iq.withFKs
 		_spec       = iq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			iq.withTaskInstance != nil,
+			iq.withMetric != nil,
 		}
 	)
-	if iq.withTaskInstance != nil {
+	if iq.withTaskInstance != nil || iq.withMetric != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -406,6 +443,35 @@ func (iq *ItemQuery) sqlAll(ctx context.Context) ([]*Item, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.TaskInstance = n
+			}
+		}
+	}
+
+	if query := iq.withMetric; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Item)
+		for i := range nodes {
+			if nodes[i].metric_items == nil {
+				continue
+			}
+			fk := *nodes[i].metric_items
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(metric.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "metric_items" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Metric = n
 			}
 		}
 	}

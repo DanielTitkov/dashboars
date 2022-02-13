@@ -47,8 +47,15 @@ func (r *EntgoRepository) UpdateTaskInstance(ctx context.Context, ti *domain.Tas
 		// TODO: maybe move to separate method
 		bulk := make([]*ent.ItemCreate, len(ti.Items))
 		for i, itm := range ti.Items {
+			metric, err := getOrCreateMetricInTransaction(ctx, tx, itm.Metric)
+			if err != nil {
+				// supposedly tx is already rollbacked here
+				return nil, err
+			}
+
 			bulk[i] = tx.Item.Create().
 				SetTaskInstanceID(ti.ID).
+				SetMetric(metric).
 				SetValue(itm.Value).
 				SetTimestamp(itm.Timestamp).
 				SetMeta(itm.Meta)

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
@@ -136,6 +137,21 @@ func (tu *TaskUpdate) AddInstances(t ...*TaskInstance) *TaskUpdate {
 	return tu.AddInstanceIDs(ids...)
 }
 
+// AddMetricIDs adds the "metrics" edge to the Metric entity by IDs.
+func (tu *TaskUpdate) AddMetricIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddMetricIDs(ids...)
+	return tu
+}
+
+// AddMetrics adds the "metrics" edges to the Metric entity.
+func (tu *TaskUpdate) AddMetrics(m ...*Metric) *TaskUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return tu.AddMetricIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
@@ -160,6 +176,27 @@ func (tu *TaskUpdate) RemoveInstances(t ...*TaskInstance) *TaskUpdate {
 		ids[i] = t[i].ID
 	}
 	return tu.RemoveInstanceIDs(ids...)
+}
+
+// ClearMetrics clears all "metrics" edges to the Metric entity.
+func (tu *TaskUpdate) ClearMetrics() *TaskUpdate {
+	tu.mutation.ClearMetrics()
+	return tu
+}
+
+// RemoveMetricIDs removes the "metrics" edge to Metric entities by IDs.
+func (tu *TaskUpdate) RemoveMetricIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveMetricIDs(ids...)
+	return tu
+}
+
+// RemoveMetrics removes "metrics" edges to Metric entities.
+func (tu *TaskUpdate) RemoveMetrics(m ...*Metric) *TaskUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return tu.RemoveMetricIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -385,6 +422,60 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.MetricsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedMetricsIDs(); len(nodes) > 0 && !tu.mutation.MetricsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.MetricsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -511,6 +602,21 @@ func (tuo *TaskUpdateOne) AddInstances(t ...*TaskInstance) *TaskUpdateOne {
 	return tuo.AddInstanceIDs(ids...)
 }
 
+// AddMetricIDs adds the "metrics" edge to the Metric entity by IDs.
+func (tuo *TaskUpdateOne) AddMetricIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddMetricIDs(ids...)
+	return tuo
+}
+
+// AddMetrics adds the "metrics" edges to the Metric entity.
+func (tuo *TaskUpdateOne) AddMetrics(m ...*Metric) *TaskUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return tuo.AddMetricIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
@@ -535,6 +641,27 @@ func (tuo *TaskUpdateOne) RemoveInstances(t ...*TaskInstance) *TaskUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return tuo.RemoveInstanceIDs(ids...)
+}
+
+// ClearMetrics clears all "metrics" edges to the Metric entity.
+func (tuo *TaskUpdateOne) ClearMetrics() *TaskUpdateOne {
+	tuo.mutation.ClearMetrics()
+	return tuo
+}
+
+// RemoveMetricIDs removes the "metrics" edge to Metric entities by IDs.
+func (tuo *TaskUpdateOne) RemoveMetricIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveMetricIDs(ids...)
+	return tuo
+}
+
+// RemoveMetrics removes "metrics" edges to Metric entities.
+func (tuo *TaskUpdateOne) RemoveMetrics(m ...*Metric) *TaskUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return tuo.RemoveMetricIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -776,6 +903,60 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: taskinstance.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.MetricsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedMetricsIDs(); len(nodes) > 0 && !tuo.mutation.MetricsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.MetricsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.MetricsTable,
+			Columns: []string{task.MetricsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: metric.FieldID,
 				},
 			},
 		}

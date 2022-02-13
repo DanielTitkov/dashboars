@@ -22,6 +22,19 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
+// The MetricFunc type is an adapter to allow the use of ordinary
+// function as Metric mutator.
+type MetricFunc func(context.Context, *ent.MetricMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MetricFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.MetricMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MetricMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The TaskFunc type is an adapter to allow the use of ordinary
 // function as Task mutator.
 type TaskFunc func(context.Context, *ent.TaskMutation) (ent.Value, error)

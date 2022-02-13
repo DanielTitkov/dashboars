@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
@@ -28,6 +29,7 @@ type TaskQuery struct {
 	predicates []predicate.Task
 	// eager-loading edges.
 	withInstances *TaskInstanceQuery
+	withMetrics   *MetricQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +81,28 @@ func (tq *TaskQuery) QueryInstances() *TaskInstanceQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.InstancesTable, task.InstancesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMetrics chains the current query on the "metrics" edge.
+func (tq *TaskQuery) QueryMetrics() *MetricQuery {
+	query := &MetricQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(metric.Table, metric.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.MetricsTable, task.MetricsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +292,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		order:         append([]OrderFunc{}, tq.order...),
 		predicates:    append([]predicate.Task{}, tq.predicates...),
 		withInstances: tq.withInstances.Clone(),
+		withMetrics:   tq.withMetrics.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -282,6 +307,17 @@ func (tq *TaskQuery) WithInstances(opts ...func(*TaskInstanceQuery)) *TaskQuery 
 		opt(query)
 	}
 	tq.withInstances = query
+	return tq
+}
+
+// WithMetrics tells the query-builder to eager-load the nodes that are connected to
+// the "metrics" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithMetrics(opts ...func(*MetricQuery)) *TaskQuery {
+	query := &MetricQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withMetrics = query
 	return tq
 }
 
@@ -350,8 +386,9 @@ func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 	var (
 		nodes       = []*Task{}
 		_spec       = tq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			tq.withInstances != nil,
+			tq.withMetrics != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -400,6 +437,35 @@ func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "task_instances" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Instances = append(node.Edges.Instances, n)
+		}
+	}
+
+	if query := tq.withMetrics; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Task)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Metrics = []*Metric{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Metric(func(s *sql.Selector) {
+			s.Where(sql.InValues(task.MetricsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.task_metrics
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "task_metrics" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "task_metrics" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Metrics = append(node.Edges.Metrics, n)
 		}
 	}
 

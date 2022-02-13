@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
@@ -31,6 +32,7 @@ type Item struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemQuery when eager-loading is set.
 	Edges               ItemEdges `json:"edges"`
+	metric_items        *int
 	task_instance_items *int
 }
 
@@ -38,9 +40,11 @@ type Item struct {
 type ItemEdges struct {
 	// TaskInstance holds the value of the task_instance edge.
 	TaskInstance *TaskInstance `json:"task_instance,omitempty"`
+	// Metric holds the value of the metric edge.
+	Metric *Metric `json:"metric,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // TaskInstanceOrErr returns the TaskInstance value or an error if the edge
@@ -57,6 +61,20 @@ func (e ItemEdges) TaskInstanceOrErr() (*TaskInstance, error) {
 	return nil, &NotLoadedError{edge: "task_instance"}
 }
 
+// MetricOrErr returns the Metric value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) MetricOrErr() (*Metric, error) {
+	if e.loadedTypes[1] {
+		if e.Metric == nil {
+			// The edge metric was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: metric.Label}
+		}
+		return e.Metric, nil
+	}
+	return nil, &NotLoadedError{edge: "metric"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Item) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -70,7 +88,9 @@ func (*Item) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case item.FieldCreateTime, item.FieldUpdateTime, item.FieldTimestamp:
 			values[i] = new(sql.NullTime)
-		case item.ForeignKeys[0]: // task_instance_items
+		case item.ForeignKeys[0]: // metric_items
+			values[i] = new(sql.NullInt64)
+		case item.ForeignKeys[1]: // task_instance_items
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Item", columns[i])
@@ -127,6 +147,13 @@ func (i *Item) assignValues(columns []string, values []interface{}) error {
 			}
 		case item.ForeignKeys[0]:
 			if value, ok := values[j].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field metric_items", value)
+			} else if value.Valid {
+				i.metric_items = new(int)
+				*i.metric_items = int(value.Int64)
+			}
+		case item.ForeignKeys[1]:
+			if value, ok := values[j].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_instance_items", value)
 			} else if value.Valid {
 				i.task_instance_items = new(int)
@@ -140,6 +167,11 @@ func (i *Item) assignValues(columns []string, values []interface{}) error {
 // QueryTaskInstance queries the "task_instance" edge of the Item entity.
 func (i *Item) QueryTaskInstance() *TaskInstanceQuery {
 	return (&ItemClient{config: i.config}).QueryTaskInstance(i)
+}
+
+// QueryMetric queries the "metric" edge of the Item entity.
+func (i *Item) QueryMetric() *MetricQuery {
+	return (&ItemClient{config: i.config}).QueryMetric(i)
 }
 
 // Update returns a builder for updating this Item.

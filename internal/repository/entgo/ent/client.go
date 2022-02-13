@@ -10,6 +10,7 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/migrate"
 
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 
@@ -25,6 +26,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// Metric is the client for interacting with the Metric builders.
+	Metric *MetricClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// TaskInstance is the client for interacting with the TaskInstance builders.
@@ -43,6 +46,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Item = NewItemClient(c.config)
+	c.Metric = NewMetricClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.TaskInstance = NewTaskInstanceClient(c.config)
 }
@@ -79,6 +83,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:          ctx,
 		config:       cfg,
 		Item:         NewItemClient(cfg),
+		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
 		TaskInstance: NewTaskInstanceClient(cfg),
 	}, nil
@@ -101,6 +106,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:          ctx,
 		config:       cfg,
 		Item:         NewItemClient(cfg),
+		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
 		TaskInstance: NewTaskInstanceClient(cfg),
 	}, nil
@@ -133,6 +139,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Item.Use(hooks...)
+	c.Metric.Use(hooks...)
 	c.Task.Use(hooks...)
 	c.TaskInstance.Use(hooks...)
 }
@@ -238,9 +245,147 @@ func (c *ItemClient) QueryTaskInstance(i *Item) *TaskInstanceQuery {
 	return query
 }
 
+// QueryMetric queries the metric edge of a Item.
+func (c *ItemClient) QueryMetric(i *Item) *MetricQuery {
+	query := &MetricQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(metric.Table, metric.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.MetricTable, item.MetricColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ItemClient) Hooks() []Hook {
 	return c.hooks.Item
+}
+
+// MetricClient is a client for the Metric schema.
+type MetricClient struct {
+	config
+}
+
+// NewMetricClient returns a client for the Metric from the given config.
+func NewMetricClient(c config) *MetricClient {
+	return &MetricClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `metric.Hooks(f(g(h())))`.
+func (c *MetricClient) Use(hooks ...Hook) {
+	c.hooks.Metric = append(c.hooks.Metric, hooks...)
+}
+
+// Create returns a create builder for Metric.
+func (c *MetricClient) Create() *MetricCreate {
+	mutation := newMetricMutation(c.config, OpCreate)
+	return &MetricCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Metric entities.
+func (c *MetricClient) CreateBulk(builders ...*MetricCreate) *MetricCreateBulk {
+	return &MetricCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Metric.
+func (c *MetricClient) Update() *MetricUpdate {
+	mutation := newMetricMutation(c.config, OpUpdate)
+	return &MetricUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MetricClient) UpdateOne(m *Metric) *MetricUpdateOne {
+	mutation := newMetricMutation(c.config, OpUpdateOne, withMetric(m))
+	return &MetricUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MetricClient) UpdateOneID(id int) *MetricUpdateOne {
+	mutation := newMetricMutation(c.config, OpUpdateOne, withMetricID(id))
+	return &MetricUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Metric.
+func (c *MetricClient) Delete() *MetricDelete {
+	mutation := newMetricMutation(c.config, OpDelete)
+	return &MetricDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *MetricClient) DeleteOne(m *Metric) *MetricDeleteOne {
+	return c.DeleteOneID(m.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *MetricClient) DeleteOneID(id int) *MetricDeleteOne {
+	builder := c.Delete().Where(metric.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MetricDeleteOne{builder}
+}
+
+// Query returns a query builder for Metric.
+func (c *MetricClient) Query() *MetricQuery {
+	return &MetricQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Metric entity by its id.
+func (c *MetricClient) Get(ctx context.Context, id int) (*Metric, error) {
+	return c.Query().Where(metric.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MetricClient) GetX(ctx context.Context, id int) *Metric {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItems queries the items edge of a Metric.
+func (c *MetricClient) QueryItems(m *Metric) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(metric.Table, metric.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, metric.ItemsTable, metric.ItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a Metric.
+func (c *MetricClient) QueryTask(m *Metric) *TaskQuery {
+	query := &TaskQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(metric.Table, metric.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, metric.TaskTable, metric.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MetricClient) Hooks() []Hook {
+	return c.hooks.Metric
 }
 
 // TaskClient is a client for the Task schema.
@@ -337,6 +482,22 @@ func (c *TaskClient) QueryInstances(t *Task) *TaskInstanceQuery {
 			sqlgraph.From(task.Table, task.FieldID, id),
 			sqlgraph.To(taskinstance.Table, taskinstance.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.InstancesTable, task.InstancesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMetrics queries the metrics edge of a Task.
+func (c *TaskClient) QueryMetrics(t *Task) *MetricQuery {
+	query := &MetricQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(metric.Table, metric.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.MetricsTable, task.MetricsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

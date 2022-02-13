@@ -23,6 +23,8 @@ const (
 	FieldMeta = "meta"
 	// EdgeTaskInstance holds the string denoting the task_instance edge name in mutations.
 	EdgeTaskInstance = "task_instance"
+	// EdgeMetric holds the string denoting the metric edge name in mutations.
+	EdgeMetric = "metric"
 	// Table holds the table name of the item in the database.
 	Table = "items"
 	// TaskInstanceTable is the table that holds the task_instance relation/edge.
@@ -32,6 +34,13 @@ const (
 	TaskInstanceInverseTable = "task_instances"
 	// TaskInstanceColumn is the table column denoting the task_instance relation/edge.
 	TaskInstanceColumn = "task_instance_items"
+	// MetricTable is the table that holds the metric relation/edge.
+	MetricTable = "items"
+	// MetricInverseTable is the table name for the Metric entity.
+	// It exists in this package in order to avoid circular dependency with the "metric" package.
+	MetricInverseTable = "metrics"
+	// MetricColumn is the table column denoting the metric relation/edge.
+	MetricColumn = "metric_items"
 )
 
 // Columns holds all SQL columns for item fields.
@@ -47,6 +56,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "items"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"metric_items",
 	"task_instance_items",
 }
 

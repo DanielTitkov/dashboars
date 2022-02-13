@@ -47,6 +47,7 @@ func (r *EntgoRepository) UpdateTaskInstance(ctx context.Context, ti *domain.Tas
 		// TODO: maybe move to separate method
 		bulk := make([]*ent.ItemCreate, len(ti.Items))
 		for i, itm := range ti.Items {
+			// TODO: this is a request or two for item. Maybe there's a way to make this more efficient.
 			metric, err := getOrCreateMetricInTransaction(ctx, tx, itm.Metric)
 			if err != nil {
 				// supposedly tx is already rollbacked here

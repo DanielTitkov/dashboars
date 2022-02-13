@@ -23,6 +23,12 @@ type (
 		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)
 		CreateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
 		UpdateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
+
+		// for system summary
+		GetItemCount(ctx context.Context) (int, error)
+		GetMetricCount(ctx context.Context) (int, error)
+		GetTaskCount(ctx context.Context) (int, error)
+		GetActiveTaskCount(ctx context.Context) (int, error)
 	}
 )
 

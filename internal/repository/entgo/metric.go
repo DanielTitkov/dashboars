@@ -9,6 +9,10 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 )
 
+func (r *EntgoRepository) GetMetricCount(ctx context.Context) (int, error) {
+	return r.client.Metric.Query().Count(ctx)
+}
+
 func getOrCreateMetricInTransaction(ctx context.Context, tx *ent.Tx, m *domain.Metric) (*ent.Metric, error) {
 	metr, err := tx.Metric.Query().
 		Where(metric.And(

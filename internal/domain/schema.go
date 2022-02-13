@@ -64,6 +64,7 @@ type (
 		RunningTasks    int
 		CompletedTasks  int
 		FailedTasks     int
+		Metrics         int
 		CollectedItems  int
 		AvgItemsPerTask float64
 		CreateTime      time.Time

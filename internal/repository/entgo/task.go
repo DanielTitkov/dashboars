@@ -10,6 +10,14 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
 )
 
+func (r *EntgoRepository) GetTaskCount(ctx context.Context) (int, error) {
+	return r.client.Task.Query().Count(ctx)
+}
+
+func (r *EntgoRepository) GetActiveTaskCount(ctx context.Context) (int, error) {
+	return r.client.Task.Query().Where(task.ActiveEQ(true)).Count(ctx)
+}
+
 func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task) (*domain.Task, error) {
 	// query task by code
 	tsk, err := r.client.Task.

@@ -64,6 +64,7 @@ func New(
 	}
 
 	// init app jobs, caches and preload data (if any)
+	go app.UpdateSystemSummaryJob() // TODO: move to jobs?
 
 	s.StartAsync()
 

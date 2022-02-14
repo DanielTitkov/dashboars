@@ -13,6 +13,7 @@ type Config struct {
 	Data     DataConfig
 	Task     TaskConfig
 	External ExternalConfig
+	App      AppConfig
 }
 
 func ReadConfigs(path string) (Config, error) {

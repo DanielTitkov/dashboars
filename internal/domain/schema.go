@@ -68,6 +68,7 @@ type (
 		CollectedItems          int
 		AvgItemsPerTask         float64
 		AvgItemsPerTaskInstance float64
+		AvgItemsPerMetric       float64
 		CreateTime              time.Time
 	}
 )

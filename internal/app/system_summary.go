@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/DanielTitkov/dashboars/internal/domain"
 )
@@ -17,6 +19,29 @@ func (a *App) GetSystemSummary(ctx context.Context) (*domain.SystemSymmary, erro
 	}
 
 	return a.systemSummary, nil
+}
+
+func (a *App) UpdateSystemSummaryJob() {
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(a.cfg.App.SystemSummaryTimeout)*time.Millisecond)
+		processDone := make(chan bool)
+		go func() {
+			err := a.updateSystemSummary(ctx)
+			if err != nil {
+				a.log.Error("failed to update system summary", err)
+			}
+			processDone <- true
+		}()
+
+		select {
+		case <-ctx.Done():
+			a.log.Error("failed to update system summary", errors.New("timeout reached"))
+		case <-processDone:
+		}
+
+		cancel()
+		time.Sleep(time.Minute * time.Duration(a.cfg.App.SystemSummaryInterval))
+	}
 }
 
 func (a *App) updateSystemSummary(ctx context.Context) error {
@@ -72,6 +97,8 @@ func (a *App) updateSystemSummary(ctx context.Context) error {
 		CollectedItems:          itemCount,
 		AvgItemsPerTask:         float64(itemCount) / float64(taskCount),
 		AvgItemsPerTaskInstance: float64(itemCount) / float64(taskInstanceCount),
+		AvgItemsPerMetric:       float64(itemCount) / float64(metricCount),
+		CreateTime:              time.Now(),
 	}
 
 	a.log.Debug("system summary updated", fmt.Sprintf("%+v", a.systemSummary))

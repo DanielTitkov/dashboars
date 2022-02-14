@@ -10,6 +10,9 @@ task:
   defaultRetryNumber: 3
   defaultRetryDelay: "5s"
   maxConcurrency: 10
+app:
+  systemSummaryInterval: 10 # minutes
+  systemSummaryTimeout: 100 # milliseconds
 data:
   presets:
     tasksPresetsPath: ./data/presets/tasks.json

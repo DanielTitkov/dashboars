@@ -65,13 +65,14 @@ func main() {
 
 	// Run the server.
 	http.Handle("/", live.NewHttpHandler(live.NewCookieStore("session-name", []byte("weak-secret")), h.Home()))
+	http.Handle("/summary", live.NewHttpHandler(live.NewCookieStore("session-name", []byte("weak-secret")), h.SystemSummary()))
 	// live scripts
 	http.Handle("/live.js", live.Javascript{})
 	http.Handle("/auto.js.map", live.JavascriptMap{})
 	// favicon
 	http.HandleFunc("/favicon.ico", faviconHandler)
 	// serve
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(cfg.Server.GetAddress(), nil))
 }
 
 func faviconHandler(w http.ResponseWriter, r *http.Request) {

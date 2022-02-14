@@ -17,3 +17,8 @@
 node_modules/
 
 bin/*
+
+# Configs 
+configs/*
+!configs/default.*
+!configs/template.*

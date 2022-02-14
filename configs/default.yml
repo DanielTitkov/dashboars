@@ -8,7 +8,7 @@ server:
 task:
   defaultSchedule: "1d"
   defaultRetryNumber: 3
-  defaultRetryDelay: "5s"
+  defaultRetryDelay: "15s"
   maxConcurrency: 10
 app:
   systemSummaryInterval: 10 # minutes

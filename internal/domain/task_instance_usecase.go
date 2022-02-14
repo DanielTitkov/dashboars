@@ -18,6 +18,7 @@ func (ti *TaskInstance) WithSuccess(items []*Item) *TaskInstance {
 	ti.Success = true
 	ti.Items = items
 	ti.Running = false
+	ti.EndTime = time.Now()
 	return ti
 }
 
@@ -25,5 +26,6 @@ func (ti *TaskInstance) WithError(err error) *TaskInstance {
 	ti.Error = err
 	ti.Success = false
 	ti.Running = false
+	ti.EndTime = time.Now()
 	return ti
 }

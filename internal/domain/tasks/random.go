@@ -112,15 +112,35 @@ func RandomTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 	itemRaw := &domain.Item{
 		Value:     v,
 		Timestamp: time.Now(),
-		Meta:      make(map[string]interface{}),
-		Metric:    metricRaw,
+		Dimensions: []*domain.Dimension{
+			{
+				Title: "city",
+				Value: "moscow",
+			},
+			{
+				Title: "source",
+				Value: "cian",
+			},
+		},
+		Meta:   make(map[string]interface{}),
+		Metric: metricRaw,
 	}
 
 	itemSquare := &domain.Item{
 		Value:     v * v,
 		Timestamp: time.Now(),
 		Meta:      make(map[string]interface{}),
-		Metric:    metricSquare,
+		Dimensions: []*domain.Dimension{
+			{
+				Title: "city",
+				Value: "spb",
+			},
+			{
+				Title: "source",
+				Value: "cian",
+			},
+		},
+		Metric: metricSquare,
 	}
 
 	return ti.WithSuccess([]*domain.Item{itemRaw, itemSquare}), nil

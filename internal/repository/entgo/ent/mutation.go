@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
@@ -27,11 +28,600 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeDimension    = "Dimension"
 	TypeItem         = "Item"
 	TypeMetric       = "Metric"
 	TypeTask         = "Task"
 	TypeTaskInstance = "TaskInstance"
 )
+
+// DimensionMutation represents an operation that mutates the Dimension nodes in the graph.
+type DimensionMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	create_time   *time.Time
+	title         *string
+	value         *string
+	meta          *map[string]interface{}
+	clearedFields map[string]struct{}
+	item          map[int]struct{}
+	removeditem   map[int]struct{}
+	cleareditem   bool
+	done          bool
+	oldValue      func(context.Context) (*Dimension, error)
+	predicates    []predicate.Dimension
+}
+
+var _ ent.Mutation = (*DimensionMutation)(nil)
+
+// dimensionOption allows management of the mutation configuration using functional options.
+type dimensionOption func(*DimensionMutation)
+
+// newDimensionMutation creates new mutation for the Dimension entity.
+func newDimensionMutation(c config, op Op, opts ...dimensionOption) *DimensionMutation {
+	m := &DimensionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDimension,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDimensionID sets the ID field of the mutation.
+func withDimensionID(id int) dimensionOption {
+	return func(m *DimensionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Dimension
+		)
+		m.oldValue = func(ctx context.Context) (*Dimension, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Dimension.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDimension sets the old Dimension of the mutation.
+func withDimension(node *Dimension) dimensionOption {
+	return func(m *DimensionMutation) {
+		m.oldValue = func(context.Context) (*Dimension, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DimensionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DimensionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DimensionMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DimensionMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Dimension.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *DimensionMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *DimensionMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *DimensionMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *DimensionMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *DimensionMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *DimensionMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetValue sets the "value" field.
+func (m *DimensionMutation) SetValue(s string) {
+	m.value = &s
+}
+
+// Value returns the value of the "value" field in the mutation.
+func (m *DimensionMutation) Value() (r string, exists bool) {
+	v := m.value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValue returns the old "value" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldValue(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValue: %w", err)
+	}
+	return oldValue.Value, nil
+}
+
+// ResetValue resets all changes to the "value" field.
+func (m *DimensionMutation) ResetValue() {
+	m.value = nil
+}
+
+// SetMeta sets the "meta" field.
+func (m *DimensionMutation) SetMeta(value map[string]interface{}) {
+	m.meta = &value
+}
+
+// Meta returns the value of the "meta" field in the mutation.
+func (m *DimensionMutation) Meta() (r map[string]interface{}, exists bool) {
+	v := m.meta
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMeta returns the old "meta" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldMeta(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMeta is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMeta requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMeta: %w", err)
+	}
+	return oldValue.Meta, nil
+}
+
+// ClearMeta clears the value of the "meta" field.
+func (m *DimensionMutation) ClearMeta() {
+	m.meta = nil
+	m.clearedFields[dimension.FieldMeta] = struct{}{}
+}
+
+// MetaCleared returns if the "meta" field was cleared in this mutation.
+func (m *DimensionMutation) MetaCleared() bool {
+	_, ok := m.clearedFields[dimension.FieldMeta]
+	return ok
+}
+
+// ResetMeta resets all changes to the "meta" field.
+func (m *DimensionMutation) ResetMeta() {
+	m.meta = nil
+	delete(m.clearedFields, dimension.FieldMeta)
+}
+
+// AddItemIDs adds the "item" edge to the Item entity by ids.
+func (m *DimensionMutation) AddItemIDs(ids ...int) {
+	if m.item == nil {
+		m.item = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.item[ids[i]] = struct{}{}
+	}
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *DimensionMutation) ClearItem() {
+	m.cleareditem = true
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *DimensionMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// RemoveItemIDs removes the "item" edge to the Item entity by IDs.
+func (m *DimensionMutation) RemoveItemIDs(ids ...int) {
+	if m.removeditem == nil {
+		m.removeditem = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.item, ids[i])
+		m.removeditem[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedItem returns the removed IDs of the "item" edge to the Item entity.
+func (m *DimensionMutation) RemovedItemIDs() (ids []int) {
+	for id := range m.removeditem {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+func (m *DimensionMutation) ItemIDs() (ids []int) {
+	for id := range m.item {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *DimensionMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+	m.removeditem = nil
+}
+
+// Where appends a list predicates to the DimensionMutation builder.
+func (m *DimensionMutation) Where(ps ...predicate.Dimension) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *DimensionMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Dimension).
+func (m *DimensionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DimensionMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.create_time != nil {
+		fields = append(fields, dimension.FieldCreateTime)
+	}
+	if m.title != nil {
+		fields = append(fields, dimension.FieldTitle)
+	}
+	if m.value != nil {
+		fields = append(fields, dimension.FieldValue)
+	}
+	if m.meta != nil {
+		fields = append(fields, dimension.FieldMeta)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DimensionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case dimension.FieldCreateTime:
+		return m.CreateTime()
+	case dimension.FieldTitle:
+		return m.Title()
+	case dimension.FieldValue:
+		return m.Value()
+	case dimension.FieldMeta:
+		return m.Meta()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DimensionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case dimension.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case dimension.FieldTitle:
+		return m.OldTitle(ctx)
+	case dimension.FieldValue:
+		return m.OldValue(ctx)
+	case dimension.FieldMeta:
+		return m.OldMeta(ctx)
+	}
+	return nil, fmt.Errorf("unknown Dimension field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DimensionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case dimension.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case dimension.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case dimension.FieldValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValue(v)
+		return nil
+	case dimension.FieldMeta:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMeta(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Dimension field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DimensionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DimensionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DimensionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Dimension numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DimensionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(dimension.FieldMeta) {
+		fields = append(fields, dimension.FieldMeta)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DimensionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DimensionMutation) ClearField(name string) error {
+	switch name {
+	case dimension.FieldMeta:
+		m.ClearMeta()
+		return nil
+	}
+	return fmt.Errorf("unknown Dimension nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DimensionMutation) ResetField(name string) error {
+	switch name {
+	case dimension.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case dimension.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case dimension.FieldValue:
+		m.ResetValue()
+		return nil
+	case dimension.FieldMeta:
+		m.ResetMeta()
+		return nil
+	}
+	return fmt.Errorf("unknown Dimension field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DimensionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.item != nil {
+		edges = append(edges, dimension.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DimensionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case dimension.EdgeItem:
+		ids := make([]ent.Value, 0, len(m.item))
+		for id := range m.item {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DimensionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removeditem != nil {
+		edges = append(edges, dimension.EdgeItem)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DimensionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case dimension.EdgeItem:
+		ids := make([]ent.Value, 0, len(m.removeditem))
+		for id := range m.removeditem {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DimensionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareditem {
+		edges = append(edges, dimension.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DimensionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case dimension.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DimensionMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Dimension unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DimensionMutation) ResetEdge(name string) error {
+	switch name {
+	case dimension.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown Dimension edge %s", name)
+}
 
 // ItemMutation represents an operation that mutates the Item nodes in the graph.
 type ItemMutation struct {
@@ -46,6 +636,9 @@ type ItemMutation struct {
 	timestamp            *time.Time
 	meta                 *map[string]interface{}
 	clearedFields        map[string]struct{}
+	dimensions           map[int]struct{}
+	removeddimensions    map[int]struct{}
+	cleareddimensions    bool
 	task_instance        *int
 	clearedtask_instance bool
 	metric               *int
@@ -366,6 +959,60 @@ func (m *ItemMutation) ResetMeta() {
 	delete(m.clearedFields, item.FieldMeta)
 }
 
+// AddDimensionIDs adds the "dimensions" edge to the Dimension entity by ids.
+func (m *ItemMutation) AddDimensionIDs(ids ...int) {
+	if m.dimensions == nil {
+		m.dimensions = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.dimensions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDimensions clears the "dimensions" edge to the Dimension entity.
+func (m *ItemMutation) ClearDimensions() {
+	m.cleareddimensions = true
+}
+
+// DimensionsCleared reports if the "dimensions" edge to the Dimension entity was cleared.
+func (m *ItemMutation) DimensionsCleared() bool {
+	return m.cleareddimensions
+}
+
+// RemoveDimensionIDs removes the "dimensions" edge to the Dimension entity by IDs.
+func (m *ItemMutation) RemoveDimensionIDs(ids ...int) {
+	if m.removeddimensions == nil {
+		m.removeddimensions = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.dimensions, ids[i])
+		m.removeddimensions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDimensions returns the removed IDs of the "dimensions" edge to the Dimension entity.
+func (m *ItemMutation) RemovedDimensionsIDs() (ids []int) {
+	for id := range m.removeddimensions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DimensionsIDs returns the "dimensions" edge IDs in the mutation.
+func (m *ItemMutation) DimensionsIDs() (ids []int) {
+	for id := range m.dimensions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDimensions resets all changes to the "dimensions" edge.
+func (m *ItemMutation) ResetDimensions() {
+	m.dimensions = nil
+	m.cleareddimensions = false
+	m.removeddimensions = nil
+}
+
 // SetTaskInstanceID sets the "task_instance" edge to the TaskInstance entity by id.
 func (m *ItemMutation) SetTaskInstanceID(id int) {
 	m.task_instance = &id
@@ -654,7 +1301,10 @@ func (m *ItemMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ItemMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.dimensions != nil {
+		edges = append(edges, item.EdgeDimensions)
+	}
 	if m.task_instance != nil {
 		edges = append(edges, item.EdgeTaskInstance)
 	}
@@ -668,6 +1318,12 @@ func (m *ItemMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case item.EdgeDimensions:
+		ids := make([]ent.Value, 0, len(m.dimensions))
+		for id := range m.dimensions {
+			ids = append(ids, id)
+		}
+		return ids
 	case item.EdgeTaskInstance:
 		if id := m.task_instance; id != nil {
 			return []ent.Value{*id}
@@ -682,7 +1338,10 @@ func (m *ItemMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ItemMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removeddimensions != nil {
+		edges = append(edges, item.EdgeDimensions)
+	}
 	return edges
 }
 
@@ -690,13 +1349,22 @@ func (m *ItemMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ItemMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case item.EdgeDimensions:
+		ids := make([]ent.Value, 0, len(m.removeddimensions))
+		for id := range m.removeddimensions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ItemMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.cleareddimensions {
+		edges = append(edges, item.EdgeDimensions)
+	}
 	if m.clearedtask_instance {
 		edges = append(edges, item.EdgeTaskInstance)
 	}
@@ -710,6 +1378,8 @@ func (m *ItemMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *ItemMutation) EdgeCleared(name string) bool {
 	switch name {
+	case item.EdgeDimensions:
+		return m.cleareddimensions
 	case item.EdgeTaskInstance:
 		return m.clearedtask_instance
 	case item.EdgeMetric:
@@ -736,6 +1406,9 @@ func (m *ItemMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ItemMutation) ResetEdge(name string) error {
 	switch name {
+	case item.EdgeDimensions:
+		m.ResetDimensions()
+		return nil
 	case item.EdgeTaskInstance:
 		m.ResetTaskInstance()
 		return nil

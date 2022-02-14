@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
@@ -74,6 +75,21 @@ func (ic *ItemCreate) SetNillableTimestamp(t *time.Time) *ItemCreate {
 func (ic *ItemCreate) SetMeta(m map[string]interface{}) *ItemCreate {
 	ic.mutation.SetMeta(m)
 	return ic
+}
+
+// AddDimensionIDs adds the "dimensions" edge to the Dimension entity by IDs.
+func (ic *ItemCreate) AddDimensionIDs(ids ...int) *ItemCreate {
+	ic.mutation.AddDimensionIDs(ids...)
+	return ic
+}
+
+// AddDimensions adds the "dimensions" edges to the Dimension entity.
+func (ic *ItemCreate) AddDimensions(d ...*Dimension) *ItemCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return ic.AddDimensionIDs(ids...)
 }
 
 // SetTaskInstanceID sets the "task_instance" edge to the TaskInstance entity by ID.
@@ -269,6 +285,25 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 			Column: item.FieldMeta,
 		})
 		_node.Meta = value
+	}
+	if nodes := ic.mutation.DimensionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ic.mutation.TaskInstanceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -48,11 +48,20 @@ type (
 		Meta        map[string]interface{}
 	}
 
+	Dimension struct {
+		ID       int
+		MetricID int
+		Title    string // e.g. city
+		Value    string // e.g. Moscow
+		Meta     map[string]interface{}
+	}
+
 	Item struct {
 		ID             int
 		TaskInstanceID int
 		Metric         *Metric
 		Value          float64
+		Dimensions     []*Dimension
 		Timestamp      time.Time
 		Meta           map[string]interface{}
 	}

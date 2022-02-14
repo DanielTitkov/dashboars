@@ -38,19 +38,30 @@ type Item struct {
 
 // ItemEdges holds the relations/edges for other nodes in the graph.
 type ItemEdges struct {
+	// Dimensions holds the value of the dimensions edge.
+	Dimensions []*Dimension `json:"dimensions,omitempty"`
 	// TaskInstance holds the value of the task_instance edge.
 	TaskInstance *TaskInstance `json:"task_instance,omitempty"`
 	// Metric holds the value of the metric edge.
 	Metric *Metric `json:"metric,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
+}
+
+// DimensionsOrErr returns the Dimensions value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) DimensionsOrErr() ([]*Dimension, error) {
+	if e.loadedTypes[0] {
+		return e.Dimensions, nil
+	}
+	return nil, &NotLoadedError{edge: "dimensions"}
 }
 
 // TaskInstanceOrErr returns the TaskInstance value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) TaskInstanceOrErr() (*TaskInstance, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		if e.TaskInstance == nil {
 			// The edge task_instance was loaded in eager-loading,
 			// but was not found.
@@ -64,7 +75,7 @@ func (e ItemEdges) TaskInstanceOrErr() (*TaskInstance, error) {
 // MetricOrErr returns the Metric value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ItemEdges) MetricOrErr() (*Metric, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Metric == nil {
 			// The edge metric was loaded in eager-loading,
 			// but was not found.
@@ -162,6 +173,11 @@ func (i *Item) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryDimensions queries the "dimensions" edge of the Item entity.
+func (i *Item) QueryDimensions() *DimensionQuery {
+	return (&ItemClient{config: i.config}).QueryDimensions(i)
 }
 
 // QueryTaskInstance queries the "task_instance" edge of the Item entity.

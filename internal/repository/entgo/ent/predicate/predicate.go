@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Dimension is the predicate function for dimension builders.
+type Dimension func(*sql.Selector)
+
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
 

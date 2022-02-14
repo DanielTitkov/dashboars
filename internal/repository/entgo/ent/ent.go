@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
@@ -32,6 +33,7 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
+		dimension.Table:    dimension.ValidColumn,
 		item.Table:         item.ValidColumn,
 		metric.Table:       metric.ValidColumn,
 		task.Table:         task.ValidColumn,

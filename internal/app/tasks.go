@@ -35,12 +35,17 @@ func (a *App) makeTaskJob(task *domain.Task, attempt int) func() {
 		}
 
 		// save results to db
+		a.taskResultMutex.Lock()
+		// this is needed to ensure transactions won't fail on parallel creation of
+		// same dimensions
+		// TODO: probably better move to db level
 		ti, err = a.repo.UpdateTaskInstance(context.TODO(), ti)
+		a.taskResultMutex.Unlock()
 		if err != nil {
 			a.log.Error("failed to save updated task instance to db", err)
 		}
 
-		a.log.Debug("task result", fmt.Sprintf("%+v", ti))
+		a.log.Debug("task result", fmt.Sprintf("%+v, err: %s", ti, err))
 	}
 }
 

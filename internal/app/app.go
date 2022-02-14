@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -13,12 +14,13 @@ import (
 
 type (
 	App struct {
-		cfg           configs.Config
-		log           *logger.Logger
-		scheduler     *gocron.Scheduler
-		repo          Repository
-		tasks         []*domain.Task
-		systemSummary *domain.SystemSymmary
+		cfg             configs.Config
+		log             *logger.Logger
+		scheduler       *gocron.Scheduler
+		repo            Repository
+		tasks           []*domain.Task
+		systemSummary   *domain.SystemSymmary
+		taskResultMutex sync.Mutex
 	}
 	Repository interface {
 		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)

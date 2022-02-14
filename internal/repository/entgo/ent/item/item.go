@@ -21,12 +21,19 @@ const (
 	FieldTimestamp = "timestamp"
 	// FieldMeta holds the string denoting the meta field in the database.
 	FieldMeta = "meta"
+	// EdgeDimensions holds the string denoting the dimensions edge name in mutations.
+	EdgeDimensions = "dimensions"
 	// EdgeTaskInstance holds the string denoting the task_instance edge name in mutations.
 	EdgeTaskInstance = "task_instance"
 	// EdgeMetric holds the string denoting the metric edge name in mutations.
 	EdgeMetric = "metric"
 	// Table holds the table name of the item in the database.
 	Table = "items"
+	// DimensionsTable is the table that holds the dimensions relation/edge. The primary key declared below.
+	DimensionsTable = "item_dimensions"
+	// DimensionsInverseTable is the table name for the Dimension entity.
+	// It exists in this package in order to avoid circular dependency with the "dimension" package.
+	DimensionsInverseTable = "dimensions"
 	// TaskInstanceTable is the table that holds the task_instance relation/edge.
 	TaskInstanceTable = "items"
 	// TaskInstanceInverseTable is the table name for the TaskInstance entity.
@@ -59,6 +66,12 @@ var ForeignKeys = []string{
 	"metric_items",
 	"task_instance_items",
 }
+
+var (
+	// DimensionsPrimaryKey and DimensionsColumn2 are the table columns denoting the
+	// primary key for the dimensions relation (M2M).
+	DimensionsPrimaryKey = []string{"item_id", "dimension_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

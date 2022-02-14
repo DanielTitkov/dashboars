@@ -9,6 +9,19 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent"
 )
 
+// The DimensionFunc type is an adapter to allow the use of ordinary
+// function as Dimension mutator.
+type DimensionFunc func(context.Context, *ent.DimensionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DimensionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DimensionMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DimensionMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The ItemFunc type is an adapter to allow the use of ordinary
 // function as Item mutator.
 type ItemFunc func(context.Context, *ent.ItemMutation) (ent.Value, error)

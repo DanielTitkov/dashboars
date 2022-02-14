@@ -439,6 +439,34 @@ func MetaNotNil() predicate.Item {
 	})
 }
 
+// HasDimensions applies the HasEdge predicate on the "dimensions" edge.
+func HasDimensions() predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DimensionsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, DimensionsTable, DimensionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDimensionsWith applies the HasEdge predicate on the "dimensions" edge with a given conditions (other predicates).
+func HasDimensionsWith(preds ...predicate.Dimension) predicate.Item {
+	return predicate.Item(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DimensionsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, DimensionsTable, DimensionsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTaskInstance applies the HasEdge predicate on the "task_instance" edge.
 func HasTaskInstance() predicate.Item {
 	return predicate.Item(func(s *sql.Selector) {

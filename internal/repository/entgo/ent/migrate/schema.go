@@ -8,6 +8,27 @@ import (
 )
 
 var (
+	// DimensionsColumns holds the columns for the "dimensions" table.
+	DimensionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString},
+		{Name: "value", Type: field.TypeString},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+	}
+	// DimensionsTable holds the schema information for the "dimensions" table.
+	DimensionsTable = &schema.Table{
+		Name:       "dimensions",
+		Columns:    DimensionsColumns,
+		PrimaryKey: []*schema.Column{DimensionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "dimension_title_value",
+				Unique:  true,
+				Columns: []*schema.Column{DimensionsColumns[2], DimensionsColumns[3]},
+			},
+		},
+	}
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -118,12 +139,39 @@ var (
 			},
 		},
 	}
+	// ItemDimensionsColumns holds the columns for the "item_dimensions" table.
+	ItemDimensionsColumns = []*schema.Column{
+		{Name: "item_id", Type: field.TypeInt},
+		{Name: "dimension_id", Type: field.TypeInt},
+	}
+	// ItemDimensionsTable holds the schema information for the "item_dimensions" table.
+	ItemDimensionsTable = &schema.Table{
+		Name:       "item_dimensions",
+		Columns:    ItemDimensionsColumns,
+		PrimaryKey: []*schema.Column{ItemDimensionsColumns[0], ItemDimensionsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_dimensions_item_id",
+				Columns:    []*schema.Column{ItemDimensionsColumns[0]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "item_dimensions_dimension_id",
+				Columns:    []*schema.Column{ItemDimensionsColumns[1]},
+				RefColumns: []*schema.Column{DimensionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		DimensionsTable,
 		ItemsTable,
 		MetricsTable,
 		TasksTable,
 		TaskInstancesTable,
+		ItemDimensionsTable,
 	}
 )
 
@@ -132,4 +180,6 @@ func init() {
 	ItemsTable.ForeignKeys[1].RefTable = TaskInstancesTable
 	MetricsTable.ForeignKeys[0].RefTable = TasksTable
 	TaskInstancesTable.ForeignKeys[0].RefTable = TasksTable
+	ItemDimensionsTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemDimensionsTable.ForeignKeys[1].RefTable = DimensionsTable
 }

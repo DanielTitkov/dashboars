@@ -65,8 +65,7 @@ func (r *EntgoRepository) UpdateTaskInstance(ctx context.Context, ti *domain.Tas
 
 	if len(ti.Items) > 0 {
 		// TODO: maybe move to separate method
-		bulk := make([]*ent.ItemCreate, len(ti.Items))
-		for i, itm := range ti.Items {
+		for _, itm := range ti.Items {
 			// TODO: this is a request or two for item. Maybe there's a way to make this more efficient.
 			metric, err := getOrCreateMetricInTransaction(ctx, tx, itm.Metric)
 			if err != nil {
@@ -74,26 +73,36 @@ func (r *EntgoRepository) UpdateTaskInstance(ctx context.Context, ti *domain.Tas
 				return nil, err
 			}
 
-			bulk[i] = tx.Item.Create().
+			item, err := tx.Item.Create().
 				SetTaskInstanceID(ti.ID).
 				SetMetric(metric).
 				SetValue(itm.Value).
 				SetTimestamp(itm.Timestamp).
-				SetMeta(itm.Meta)
-		}
-		_, err = tx.Item.CreateBulk(bulk...).Save(ctx)
-		if err != nil {
-			return nil, rollback(tx, err)
+				SetMeta(itm.Meta).
+				Save(ctx)
+			if err != nil {
+				return nil, rollback(tx, err)
+			}
+
+			itm.ID = item.ID
+			if err := createItemDimensionsInTransaction(ctx, tx, itm); err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	taskInstance, err := tx.TaskInstance.UpdateOneID(ti.ID).
+	tiQuery := tx.TaskInstance.UpdateOneID(ti.ID).
 		SetStartTime(ti.StartTime).
 		SetEndTime(ti.EndTime).
 		SetSuccess(ti.Success).
 		SetRunning(ti.Running).
-		SetMeta(ti.Meta).
-		Save(ctx)
+		SetMeta(ti.Meta)
+
+	if ti.Error != nil {
+		tiQuery.SetError(ti.Error.Error())
+	}
+
+	taskInstance, err := tiQuery.Save(ctx)
 	if err != nil {
 		return nil, rollback(tx, err)
 	}
@@ -123,6 +132,7 @@ func entToDomainTaskInstance(ti *ent.TaskInstance, taskIDs ...int) *domain.TaskI
 		EndTime:   ti.EndTime,
 		Error:     errStr,
 		Success:   *ti.Success,
+		Attempt:   ti.Attempt,
 		Running:   ti.Running,
 		Meta:      ti.Meta,
 		Items:     nil, // TODO add edge

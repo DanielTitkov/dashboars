@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
@@ -75,6 +76,21 @@ func (iu *ItemUpdate) ClearMeta() *ItemUpdate {
 	return iu
 }
 
+// AddDimensionIDs adds the "dimensions" edge to the Dimension entity by IDs.
+func (iu *ItemUpdate) AddDimensionIDs(ids ...int) *ItemUpdate {
+	iu.mutation.AddDimensionIDs(ids...)
+	return iu
+}
+
+// AddDimensions adds the "dimensions" edges to the Dimension entity.
+func (iu *ItemUpdate) AddDimensions(d ...*Dimension) *ItemUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return iu.AddDimensionIDs(ids...)
+}
+
 // SetTaskInstanceID sets the "task_instance" edge to the TaskInstance entity by ID.
 func (iu *ItemUpdate) SetTaskInstanceID(id int) *ItemUpdate {
 	iu.mutation.SetTaskInstanceID(id)
@@ -100,6 +116,27 @@ func (iu *ItemUpdate) SetMetric(m *Metric) *ItemUpdate {
 // Mutation returns the ItemMutation object of the builder.
 func (iu *ItemUpdate) Mutation() *ItemMutation {
 	return iu.mutation
+}
+
+// ClearDimensions clears all "dimensions" edges to the Dimension entity.
+func (iu *ItemUpdate) ClearDimensions() *ItemUpdate {
+	iu.mutation.ClearDimensions()
+	return iu
+}
+
+// RemoveDimensionIDs removes the "dimensions" edge to Dimension entities by IDs.
+func (iu *ItemUpdate) RemoveDimensionIDs(ids ...int) *ItemUpdate {
+	iu.mutation.RemoveDimensionIDs(ids...)
+	return iu
+}
+
+// RemoveDimensions removes "dimensions" edges to Dimension entities.
+func (iu *ItemUpdate) RemoveDimensions(d ...*Dimension) *ItemUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return iu.RemoveDimensionIDs(ids...)
 }
 
 // ClearTaskInstance clears the "task_instance" edge to the TaskInstance entity.
@@ -253,6 +290,60 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: item.FieldMeta,
 		})
 	}
+	if iu.mutation.DimensionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.RemovedDimensionsIDs(); len(nodes) > 0 && !iu.mutation.DimensionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.DimensionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if iu.mutation.TaskInstanceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -387,6 +478,21 @@ func (iuo *ItemUpdateOne) ClearMeta() *ItemUpdateOne {
 	return iuo
 }
 
+// AddDimensionIDs adds the "dimensions" edge to the Dimension entity by IDs.
+func (iuo *ItemUpdateOne) AddDimensionIDs(ids ...int) *ItemUpdateOne {
+	iuo.mutation.AddDimensionIDs(ids...)
+	return iuo
+}
+
+// AddDimensions adds the "dimensions" edges to the Dimension entity.
+func (iuo *ItemUpdateOne) AddDimensions(d ...*Dimension) *ItemUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return iuo.AddDimensionIDs(ids...)
+}
+
 // SetTaskInstanceID sets the "task_instance" edge to the TaskInstance entity by ID.
 func (iuo *ItemUpdateOne) SetTaskInstanceID(id int) *ItemUpdateOne {
 	iuo.mutation.SetTaskInstanceID(id)
@@ -412,6 +518,27 @@ func (iuo *ItemUpdateOne) SetMetric(m *Metric) *ItemUpdateOne {
 // Mutation returns the ItemMutation object of the builder.
 func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 	return iuo.mutation
+}
+
+// ClearDimensions clears all "dimensions" edges to the Dimension entity.
+func (iuo *ItemUpdateOne) ClearDimensions() *ItemUpdateOne {
+	iuo.mutation.ClearDimensions()
+	return iuo
+}
+
+// RemoveDimensionIDs removes the "dimensions" edge to Dimension entities by IDs.
+func (iuo *ItemUpdateOne) RemoveDimensionIDs(ids ...int) *ItemUpdateOne {
+	iuo.mutation.RemoveDimensionIDs(ids...)
+	return iuo
+}
+
+// RemoveDimensions removes "dimensions" edges to Dimension entities.
+func (iuo *ItemUpdateOne) RemoveDimensions(d ...*Dimension) *ItemUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return iuo.RemoveDimensionIDs(ids...)
 }
 
 // ClearTaskInstance clears the "task_instance" edge to the TaskInstance entity.
@@ -588,6 +715,60 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 			Type:   field.TypeJSON,
 			Column: item.FieldMeta,
 		})
+	}
+	if iuo.mutation.DimensionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.RemovedDimensionsIDs(); len(nodes) > 0 && !iuo.mutation.DimensionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.DimensionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.DimensionsTable,
+			Columns: item.DimensionsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: dimension.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if iuo.mutation.TaskInstanceCleared() {
 		edge := &sqlgraph.EdgeSpec{

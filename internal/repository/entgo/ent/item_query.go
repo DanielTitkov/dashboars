@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
@@ -27,6 +29,7 @@ type ItemQuery struct {
 	fields     []string
 	predicates []predicate.Item
 	// eager-loading edges.
+	withDimensions   *DimensionQuery
 	withTaskInstance *TaskInstanceQuery
 	withMetric       *MetricQuery
 	withFKs          bool
@@ -64,6 +67,28 @@ func (iq *ItemQuery) Unique(unique bool) *ItemQuery {
 func (iq *ItemQuery) Order(o ...OrderFunc) *ItemQuery {
 	iq.order = append(iq.order, o...)
 	return iq
+}
+
+// QueryDimensions chains the current query on the "dimensions" edge.
+func (iq *ItemQuery) QueryDimensions() *DimensionQuery {
+	query := &DimensionQuery{config: iq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(dimension.Table, dimension.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.DimensionsTable, item.DimensionsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryTaskInstance chains the current query on the "task_instance" edge.
@@ -291,12 +316,24 @@ func (iq *ItemQuery) Clone() *ItemQuery {
 		offset:           iq.offset,
 		order:            append([]OrderFunc{}, iq.order...),
 		predicates:       append([]predicate.Item{}, iq.predicates...),
+		withDimensions:   iq.withDimensions.Clone(),
 		withTaskInstance: iq.withTaskInstance.Clone(),
 		withMetric:       iq.withMetric.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
 		path: iq.path,
 	}
+}
+
+// WithDimensions tells the query-builder to eager-load the nodes that are connected to
+// the "dimensions" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *ItemQuery) WithDimensions(opts ...func(*DimensionQuery)) *ItemQuery {
+	query := &DimensionQuery{config: iq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withDimensions = query
+	return iq
 }
 
 // WithTaskInstance tells the query-builder to eager-load the nodes that are connected to
@@ -387,7 +424,8 @@ func (iq *ItemQuery) sqlAll(ctx context.Context) ([]*Item, error) {
 		nodes       = []*Item{}
 		withFKs     = iq.withFKs
 		_spec       = iq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
+			iq.withDimensions != nil,
 			iq.withTaskInstance != nil,
 			iq.withMetric != nil,
 		}
@@ -416,6 +454,71 @@ func (iq *ItemQuery) sqlAll(ctx context.Context) ([]*Item, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := iq.withDimensions; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Item, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Dimensions = []*Dimension{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Item)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   item.DimensionsTable,
+				Columns: item.DimensionsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(item.DimensionsPrimaryKey[0], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, iq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "dimensions": %w`, err)
+		}
+		query.Where(dimension.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "dimensions" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Dimensions = append(nodes[i].Edges.Dimensions, n)
+			}
+		}
 	}
 
 	if query := iq.withTaskInstance; query != nil {

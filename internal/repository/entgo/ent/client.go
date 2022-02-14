@@ -9,6 +9,7 @@ import (
 
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/migrate"
 
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
@@ -24,6 +25,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Dimension is the client for interacting with the Dimension builders.
+	Dimension *DimensionClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 	// Metric is the client for interacting with the Metric builders.
@@ -45,6 +48,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Dimension = NewDimensionClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.Metric = NewMetricClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -82,6 +86,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:          ctx,
 		config:       cfg,
+		Dimension:    NewDimensionClient(cfg),
 		Item:         NewItemClient(cfg),
 		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
@@ -105,6 +110,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:          ctx,
 		config:       cfg,
+		Dimension:    NewDimensionClient(cfg),
 		Item:         NewItemClient(cfg),
 		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
@@ -115,7 +121,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Item.
+//		Dimension.
 //		Query().
 //		Count(ctx)
 //
@@ -138,10 +144,117 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Dimension.Use(hooks...)
 	c.Item.Use(hooks...)
 	c.Metric.Use(hooks...)
 	c.Task.Use(hooks...)
 	c.TaskInstance.Use(hooks...)
+}
+
+// DimensionClient is a client for the Dimension schema.
+type DimensionClient struct {
+	config
+}
+
+// NewDimensionClient returns a client for the Dimension from the given config.
+func NewDimensionClient(c config) *DimensionClient {
+	return &DimensionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `dimension.Hooks(f(g(h())))`.
+func (c *DimensionClient) Use(hooks ...Hook) {
+	c.hooks.Dimension = append(c.hooks.Dimension, hooks...)
+}
+
+// Create returns a create builder for Dimension.
+func (c *DimensionClient) Create() *DimensionCreate {
+	mutation := newDimensionMutation(c.config, OpCreate)
+	return &DimensionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Dimension entities.
+func (c *DimensionClient) CreateBulk(builders ...*DimensionCreate) *DimensionCreateBulk {
+	return &DimensionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Dimension.
+func (c *DimensionClient) Update() *DimensionUpdate {
+	mutation := newDimensionMutation(c.config, OpUpdate)
+	return &DimensionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DimensionClient) UpdateOne(d *Dimension) *DimensionUpdateOne {
+	mutation := newDimensionMutation(c.config, OpUpdateOne, withDimension(d))
+	return &DimensionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DimensionClient) UpdateOneID(id int) *DimensionUpdateOne {
+	mutation := newDimensionMutation(c.config, OpUpdateOne, withDimensionID(id))
+	return &DimensionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Dimension.
+func (c *DimensionClient) Delete() *DimensionDelete {
+	mutation := newDimensionMutation(c.config, OpDelete)
+	return &DimensionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *DimensionClient) DeleteOne(d *Dimension) *DimensionDeleteOne {
+	return c.DeleteOneID(d.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *DimensionClient) DeleteOneID(id int) *DimensionDeleteOne {
+	builder := c.Delete().Where(dimension.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DimensionDeleteOne{builder}
+}
+
+// Query returns a query builder for Dimension.
+func (c *DimensionClient) Query() *DimensionQuery {
+	return &DimensionQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Dimension entity by its id.
+func (c *DimensionClient) Get(ctx context.Context, id int) (*Dimension, error) {
+	return c.Query().Where(dimension.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DimensionClient) GetX(ctx context.Context, id int) *Dimension {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a Dimension.
+func (c *DimensionClient) QueryItem(d *Dimension) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dimension.Table, dimension.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, dimension.ItemTable, dimension.ItemPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DimensionClient) Hooks() []Hook {
+	return c.hooks.Dimension
 }
 
 // ItemClient is a client for the Item schema.
@@ -227,6 +340,22 @@ func (c *ItemClient) GetX(ctx context.Context, id int) *Item {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryDimensions queries the dimensions edge of a Item.
+func (c *ItemClient) QueryDimensions(i *Item) *DimensionQuery {
+	query := &DimensionQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(dimension.Table, dimension.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.DimensionsTable, item.DimensionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryTaskInstance queries the task_instance edge of a Item.

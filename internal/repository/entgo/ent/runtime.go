@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/dimension"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/schema"
@@ -16,6 +17,23 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	dimensionMixin := schema.Dimension{}.Mixin()
+	dimensionMixinFields0 := dimensionMixin[0].Fields()
+	_ = dimensionMixinFields0
+	dimensionFields := schema.Dimension{}.Fields()
+	_ = dimensionFields
+	// dimensionDescCreateTime is the schema descriptor for create_time field.
+	dimensionDescCreateTime := dimensionMixinFields0[0].Descriptor()
+	// dimension.DefaultCreateTime holds the default value on creation for the create_time field.
+	dimension.DefaultCreateTime = dimensionDescCreateTime.Default.(func() time.Time)
+	// dimensionDescTitle is the schema descriptor for title field.
+	dimensionDescTitle := dimensionFields[0].Descriptor()
+	// dimension.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	dimension.TitleValidator = dimensionDescTitle.Validators[0].(func(string) error)
+	// dimensionDescValue is the schema descriptor for value field.
+	dimensionDescValue := dimensionFields[1].Descriptor()
+	// dimension.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	dimension.ValueValidator = dimensionDescValue.Validators[0].(func(string) error)
 	itemMixin := schema.Item{}.Mixin()
 	itemMixinFields0 := itemMixin[0].Fields()
 	_ = itemMixinFields0

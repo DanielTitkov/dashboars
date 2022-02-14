@@ -26,6 +26,8 @@ func (Item) Fields() []ent.Field {
 // Edges of the Item.
 func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
+		// has
+		edge.To("dimensions", Dimension.Type),
 		// belongs to
 		edge.From("task_instance", TaskInstance.Type).Ref("items").Unique().Required(),
 		edge.From("metric", Metric.Type).Ref("items").Unique().Required(),

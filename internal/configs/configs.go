@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	Env    string
-	DB     DBConfig
-	Server ServerConfig
-	Data   DataConfig
-	Task   TaskConfig
+	Env      string
+	DB       DBConfig
+	Server   ServerConfig
+	Data     DataConfig
+	Task     TaskConfig
+	External ExternalConfig
 }
 
 func ReadConfigs(path string) (Config, error) {

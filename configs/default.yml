@@ -13,3 +13,7 @@ task:
 data:
   presets:
     tasksPresetsPath: ./data/presets/tasks.json
+external:
+  telegram:
+    telegramTo: 99999
+    telegramToken: "9999:AAAAAAAAA"

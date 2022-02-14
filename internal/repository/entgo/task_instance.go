@@ -8,10 +8,30 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/domain"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
 )
 
-func (r *EntgoRepository) TaskInstanceCount(ctx context.Context) (int, error) {
+func (r *EntgoRepository) GetTaskInstanceCount(ctx context.Context) (int, error) {
 	return r.client.TaskInstance.Query().Count(ctx)
+}
+
+func (r *EntgoRepository) GetFailedTaskInstanceCount(ctx context.Context) (int, error) {
+	return r.client.TaskInstance.Query().Where(taskinstance.And(
+		taskinstance.RunningEQ(false),
+		taskinstance.SuccessEQ(false),
+	)).Count(ctx)
+}
+
+func (r *EntgoRepository) GetRunningTaskInstanceCount(ctx context.Context) (int, error) {
+	return r.client.TaskInstance.Query().Where(taskinstance.And(
+		taskinstance.RunningEQ(true),
+	)).Count(ctx)
+}
+
+func (r *EntgoRepository) GetSuccesfulTaskInstanceCount(ctx context.Context) (int, error) {
+	return r.client.TaskInstance.Query().Where(taskinstance.And(
+		taskinstance.SuccessEQ(true),
+	)).Count(ctx)
 }
 
 func (r *EntgoRepository) CreateTaskInstance(ctx context.Context, ti *domain.TaskInstance) (*domain.TaskInstance, error) {

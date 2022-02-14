@@ -13,11 +13,12 @@ import (
 
 type (
 	App struct {
-		cfg       configs.Config
-		log       *logger.Logger
-		scheduler *gocron.Scheduler
-		repo      Repository
-		tasks     []*domain.Task
+		cfg           configs.Config
+		log           *logger.Logger
+		scheduler     *gocron.Scheduler
+		repo          Repository
+		tasks         []*domain.Task
+		systemSummary *domain.SystemSymmary
 	}
 	Repository interface {
 		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)
@@ -29,6 +30,10 @@ type (
 		GetMetricCount(ctx context.Context) (int, error)
 		GetTaskCount(ctx context.Context) (int, error)
 		GetActiveTaskCount(ctx context.Context) (int, error)
+		GetTaskInstanceCount(ctx context.Context) (int, error)
+		GetFailedTaskInstanceCount(ctx context.Context) (int, error)
+		GetRunningTaskInstanceCount(ctx context.Context) (int, error)
+		GetSuccesfulTaskInstanceCount(ctx context.Context) (int, error)
 	}
 )
 

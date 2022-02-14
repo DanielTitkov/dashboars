@@ -58,15 +58,16 @@ type (
 	}
 
 	SystemSymmary struct {
-		ID              int
-		Tasks           int
-		ActiveTasks     int
-		RunningTasks    int
-		CompletedTasks  int
-		FailedTasks     int
-		Metrics         int
-		CollectedItems  int
-		AvgItemsPerTask float64
-		CreateTime      time.Time
+		ID                      int
+		Tasks                   int
+		ActiveTasks             int
+		RunningTasks            int
+		CompletedTasks          int
+		FailedTasks             int
+		Metrics                 int
+		CollectedItems          int
+		AvgItemsPerTask         float64
+		AvgItemsPerTaskInstance float64
+		CreateTime              time.Time
 	}
 )

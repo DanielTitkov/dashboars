@@ -94,7 +94,6 @@ func (p *Parser) Run() (*Result, error) {
 
 		c.OnHTML("body", func(e *colly.HTMLElement) {
 			for _, get := range visit.Get {
-				// e.ForEach(get.Elem, func(_ int, el *colly.HTMLElement) {
 				value := e.ChildText(get.Elem)
 				if get.Strip {
 					value = reg.ReplaceAllString(value, "")
@@ -107,7 +106,6 @@ func (p *Parser) Run() (*Result, error) {
 				}
 
 				resultItems = append(resultItems, item)
-				// })
 			}
 		})
 
@@ -118,13 +116,10 @@ func (p *Parser) Run() (*Result, error) {
 	}
 
 	endTime := time.Now()
-
-	pr := Result{
+	return &Result{
 		StartTime: startTime,
 		EndTime:   endTime,
 		Elapsed:   endTime.Sub(startTime),
 		Items:     resultItems,
-	}
-
-	return &pr, nil
+	}, nil
 }

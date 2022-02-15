@@ -1,0 +1,11 @@
+[
+    {
+        "type": "failing",
+        "code": "fail",
+        "title": "Failing",
+        "description": "failing task for testing purposes",
+        "active": false,
+        "schedule": "4m",
+        "args": {}
+    }
+]

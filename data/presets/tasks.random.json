@@ -22,14 +22,5 @@
             "min": 100,
             "max": 99999
         }
-    },
-    {
-        "type": "failing",
-        "code": "fail",
-        "title": "Failing",
-        "description": "failing task for testing purposes",
-        "active": true,
-        "schedule": "4m",
-        "args": {}
     }
 ]

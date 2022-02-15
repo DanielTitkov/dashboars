@@ -5,6 +5,6 @@ type (
 		Presets PresetsConfig
 	}
 	PresetsConfig struct {
-		TasksPresetsPath string `yaml:"tasksPresetsPath"`
+		TaskPresetsPaths []string `yaml:"taskPresetsPaths"`
 	}
 )

@@ -143,5 +143,22 @@ func RandomTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 		Metric: metricSquare,
 	}
 
-	return ti.WithSuccess([]*domain.Item{itemRaw, itemSquare}), nil
+	itemSquare2 := &domain.Item{
+		Value:     v * v,
+		Timestamp: time.Now(),
+		Meta:      make(map[string]interface{}),
+		Dimensions: []*domain.Dimension{
+			{
+				Title: "city",
+				Value: "kazan",
+			},
+			{
+				Title: "source",
+				Value: "yandex",
+			},
+		},
+		Metric: metricSquare,
+	}
+
+	return ti.WithSuccess([]*domain.Item{itemRaw, itemSquare, itemSquare2}), nil
 }

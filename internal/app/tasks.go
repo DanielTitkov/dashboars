@@ -65,31 +65,35 @@ func (a *App) scheduleTasks() error {
 }
 
 func (a *App) loadTasksPresets() error {
-	data, err := ioutil.ReadFile(a.cfg.Data.Presets.TasksPresetsPath)
-	if err != nil {
-		return err
-	}
-
-	var presets []domain.CreateTaskArgs
-	err = json.Unmarshal(data, &presets)
-	if err != nil {
-		return err
-	}
-
-	for _, preset := range presets {
-		task, err := tasks.CreateTask(preset)
+	a.log.Info("loading tasks", fmt.Sprint(a.cfg.Data.Presets.TaskPresetsPaths))
+	for _, path := range a.cfg.Data.Presets.TaskPresetsPaths {
+		a.log.Debug("reading from file", path)
+		data, err := ioutil.ReadFile(path)
 		if err != nil {
-			a.log.Fatal("failed to create task", err)
+			return err
 		}
 
-		// saving to db, must have id after that
-		task, err = a.repo.CreateOrUpdateTask(context.Background(), task)
+		var presets []domain.CreateTaskArgs
+		err = json.Unmarshal(data, &presets)
 		if err != nil {
-			a.log.Fatal("failed to save task to db", err)
+			return err
 		}
 
-		a.tasks = append(a.tasks, task)
-		a.log.Info("loaded task", fmt.Sprintf("%+v", task))
+		for _, preset := range presets {
+			task, err := tasks.CreateTask(preset)
+			if err != nil {
+				a.log.Fatal("failed to create task", err)
+			}
+
+			// saving to db, must have id after that
+			task, err = a.repo.CreateOrUpdateTask(context.Background(), task)
+			if err != nil {
+				a.log.Fatal("failed to save task to db", err)
+			}
+
+			a.tasks = append(a.tasks, task)
+			a.log.Info("loaded task", fmt.Sprintf("%+v", task))
+		}
 	}
 
 	return nil

@@ -1,0 +1,45 @@
+{
+  "delay": 2,
+  "randomDelay": 1,
+  "visit": [
+    {
+      "url": "https://www.wikipedia.org/",
+      "get": [
+        {
+          "elem": "div.footer-sidebar-text:nth-child(2)",
+          "strip": true,
+          "to": {
+            "name": "footer_text",
+            "attrs": [
+              {
+                "name": "source",
+                "value": "wiki"
+              },
+              {
+                "name": "location",
+                "value": "footer"
+              }
+            ]
+          }
+        },
+        {
+          "elem": "p.jsl10n",
+          "strip": false,
+          "to": {
+            "name": "save_text",
+            "attrs": [
+              {
+                "name": "source",
+                "value": "wiki"
+              },
+              {
+                "name": "location",
+                "value": "very-footer"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

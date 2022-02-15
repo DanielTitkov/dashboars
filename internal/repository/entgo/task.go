@@ -79,6 +79,7 @@ func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task
 	}
 
 	if len(tagIDs) > 0 {
+		tskUpdateQuery.RemoveTagIDs(tagIDs...)
 		tskUpdateQuery.AddTagIDs(tagIDs...)
 	}
 

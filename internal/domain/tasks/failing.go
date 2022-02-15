@@ -10,7 +10,7 @@ import (
 type FailingTaskArgs struct {
 }
 
-func NewFailingTask(args domain.CreateTaskArgs) (*domain.Task, error) {
+func NewFailingTask(args domain.CreateTaskArgs, cat *domain.TaskCategory, tags []*domain.TaskTag) (*domain.Task, error) {
 	return &domain.Task{
 		ID:          args.ID,
 		Type:        args.Type,
@@ -20,6 +20,8 @@ func NewFailingTask(args domain.CreateTaskArgs) (*domain.Task, error) {
 		Active:      args.Active,
 		Display:     args.Display,
 		Schedule:    args.Schedule,
+		Category:    cat,
+		Tags:        tags,
 		Args:        &FailingTaskArgs{},
 		ResolveFn:   FailingTaskResolveFn,
 	}, nil

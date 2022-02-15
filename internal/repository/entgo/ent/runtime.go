@@ -10,7 +10,9 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/schema"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -111,6 +113,33 @@ func init() {
 	taskDescDisplay := taskFields[5].Descriptor()
 	// task.DefaultDisplay holds the default value on creation for the display field.
 	task.DefaultDisplay = taskDescDisplay.Default.(bool)
+	taskcategoryMixin := schema.TaskCategory{}.Mixin()
+	taskcategoryMixinFields0 := taskcategoryMixin[0].Fields()
+	_ = taskcategoryMixinFields0
+	taskcategoryFields := schema.TaskCategory{}.Fields()
+	_ = taskcategoryFields
+	// taskcategoryDescCreateTime is the schema descriptor for create_time field.
+	taskcategoryDescCreateTime := taskcategoryMixinFields0[0].Descriptor()
+	// taskcategory.DefaultCreateTime holds the default value on creation for the create_time field.
+	taskcategory.DefaultCreateTime = taskcategoryDescCreateTime.Default.(func() time.Time)
+	// taskcategoryDescUpdateTime is the schema descriptor for update_time field.
+	taskcategoryDescUpdateTime := taskcategoryMixinFields0[1].Descriptor()
+	// taskcategory.DefaultUpdateTime holds the default value on creation for the update_time field.
+	taskcategory.DefaultUpdateTime = taskcategoryDescUpdateTime.Default.(func() time.Time)
+	// taskcategory.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	taskcategory.UpdateDefaultUpdateTime = taskcategoryDescUpdateTime.UpdateDefault.(func() time.Time)
+	// taskcategoryDescTitle is the schema descriptor for title field.
+	taskcategoryDescTitle := taskcategoryFields[0].Descriptor()
+	// taskcategory.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	taskcategory.TitleValidator = taskcategoryDescTitle.Validators[0].(func(string) error)
+	// taskcategoryDescDescription is the schema descriptor for description field.
+	taskcategoryDescDescription := taskcategoryFields[1].Descriptor()
+	// taskcategory.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	taskcategory.DescriptionValidator = taskcategoryDescDescription.Validators[0].(func(string) error)
+	// taskcategoryDescDisplay is the schema descriptor for display field.
+	taskcategoryDescDisplay := taskcategoryFields[2].Descriptor()
+	// taskcategory.DefaultDisplay holds the default value on creation for the display field.
+	taskcategory.DefaultDisplay = taskcategoryDescDisplay.Default.(bool)
 	taskinstanceMixin := schema.TaskInstance{}.Mixin()
 	taskinstanceMixinFields0 := taskinstanceMixin[0].Fields()
 	_ = taskinstanceMixinFields0
@@ -138,4 +167,31 @@ func init() {
 	taskinstanceDescRunning := taskinstanceFields[4].Descriptor()
 	// taskinstance.DefaultRunning holds the default value on creation for the running field.
 	taskinstance.DefaultRunning = taskinstanceDescRunning.Default.(bool)
+	tasktagMixin := schema.TaskTag{}.Mixin()
+	tasktagMixinFields0 := tasktagMixin[0].Fields()
+	_ = tasktagMixinFields0
+	tasktagFields := schema.TaskTag{}.Fields()
+	_ = tasktagFields
+	// tasktagDescCreateTime is the schema descriptor for create_time field.
+	tasktagDescCreateTime := tasktagMixinFields0[0].Descriptor()
+	// tasktag.DefaultCreateTime holds the default value on creation for the create_time field.
+	tasktag.DefaultCreateTime = tasktagDescCreateTime.Default.(func() time.Time)
+	// tasktagDescUpdateTime is the schema descriptor for update_time field.
+	tasktagDescUpdateTime := tasktagMixinFields0[1].Descriptor()
+	// tasktag.DefaultUpdateTime holds the default value on creation for the update_time field.
+	tasktag.DefaultUpdateTime = tasktagDescUpdateTime.Default.(func() time.Time)
+	// tasktag.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	tasktag.UpdateDefaultUpdateTime = tasktagDescUpdateTime.UpdateDefault.(func() time.Time)
+	// tasktagDescTitle is the schema descriptor for title field.
+	tasktagDescTitle := tasktagFields[0].Descriptor()
+	// tasktag.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	tasktag.TitleValidator = tasktagDescTitle.Validators[0].(func(string) error)
+	// tasktagDescDescription is the schema descriptor for description field.
+	tasktagDescDescription := tasktagFields[1].Descriptor()
+	// tasktag.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	tasktag.DescriptionValidator = tasktagDescDescription.Validators[0].(func(string) error)
+	// tasktagDescDisplay is the schema descriptor for display field.
+	tasktagDescDisplay := tasktagFields[2].Descriptor()
+	// tasktag.DefaultDisplay holds the default value on creation for the display field.
+	tasktag.DefaultDisplay = tasktagDescDisplay.Default.(bool)
 }

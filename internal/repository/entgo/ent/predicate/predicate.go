@@ -18,5 +18,11 @@ type Metric func(*sql.Selector)
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 
+// TaskCategory is the predicate function for taskcategory builders.
+type TaskCategory func(*sql.Selector)
+
 // TaskInstance is the predicate function for taskinstance builders.
 type TaskInstance func(*sql.Selector)
+
+// TaskTag is the predicate function for tasktag builders.
+type TaskTag func(*sql.Selector)

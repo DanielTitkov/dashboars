@@ -14,7 +14,9 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 )
 
 // TaskUpdate is the builder for updating Task entities.
@@ -152,6 +154,32 @@ func (tu *TaskUpdate) AddMetrics(m ...*Metric) *TaskUpdate {
 	return tu.AddMetricIDs(ids...)
 }
 
+// SetCategoryID sets the "category" edge to the TaskCategory entity by ID.
+func (tu *TaskUpdate) SetCategoryID(id int) *TaskUpdate {
+	tu.mutation.SetCategoryID(id)
+	return tu
+}
+
+// SetCategory sets the "category" edge to the TaskCategory entity.
+func (tu *TaskUpdate) SetCategory(t *TaskCategory) *TaskUpdate {
+	return tu.SetCategoryID(t.ID)
+}
+
+// AddTagIDs adds the "tags" edge to the TaskTag entity by IDs.
+func (tu *TaskUpdate) AddTagIDs(ids ...int) *TaskUpdate {
+	tu.mutation.AddTagIDs(ids...)
+	return tu
+}
+
+// AddTags adds the "tags" edges to the TaskTag entity.
+func (tu *TaskUpdate) AddTags(t ...*TaskTag) *TaskUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddTagIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
@@ -197,6 +225,33 @@ func (tu *TaskUpdate) RemoveMetrics(m ...*Metric) *TaskUpdate {
 		ids[i] = m[i].ID
 	}
 	return tu.RemoveMetricIDs(ids...)
+}
+
+// ClearCategory clears the "category" edge to the TaskCategory entity.
+func (tu *TaskUpdate) ClearCategory() *TaskUpdate {
+	tu.mutation.ClearCategory()
+	return tu
+}
+
+// ClearTags clears all "tags" edges to the TaskTag entity.
+func (tu *TaskUpdate) ClearTags() *TaskUpdate {
+	tu.mutation.ClearTags()
+	return tu
+}
+
+// RemoveTagIDs removes the "tags" edge to TaskTag entities by IDs.
+func (tu *TaskUpdate) RemoveTagIDs(ids ...int) *TaskUpdate {
+	tu.mutation.RemoveTagIDs(ids...)
+	return tu
+}
+
+// RemoveTags removes "tags" edges to TaskTag entities.
+func (tu *TaskUpdate) RemoveTags(t ...*TaskTag) *TaskUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveTagIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -279,6 +334,9 @@ func (tu *TaskUpdate) check() error {
 		if err := task.DescriptionValidator(v); err != nil {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Task.description": %w`, err)}
 		}
+	}
+	if _, ok := tu.mutation.CategoryID(); tu.mutation.CategoryCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.category"`)
 	}
 	return nil
 }
@@ -476,6 +534,95 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.CategoryTable,
+			Columns: []string{task.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskcategory.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.CategoryTable,
+			Columns: []string{task.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskcategory.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedTagsIDs(); len(nodes) > 0 && !tu.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -617,6 +764,32 @@ func (tuo *TaskUpdateOne) AddMetrics(m ...*Metric) *TaskUpdateOne {
 	return tuo.AddMetricIDs(ids...)
 }
 
+// SetCategoryID sets the "category" edge to the TaskCategory entity by ID.
+func (tuo *TaskUpdateOne) SetCategoryID(id int) *TaskUpdateOne {
+	tuo.mutation.SetCategoryID(id)
+	return tuo
+}
+
+// SetCategory sets the "category" edge to the TaskCategory entity.
+func (tuo *TaskUpdateOne) SetCategory(t *TaskCategory) *TaskUpdateOne {
+	return tuo.SetCategoryID(t.ID)
+}
+
+// AddTagIDs adds the "tags" edge to the TaskTag entity by IDs.
+func (tuo *TaskUpdateOne) AddTagIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.AddTagIDs(ids...)
+	return tuo
+}
+
+// AddTags adds the "tags" edges to the TaskTag entity.
+func (tuo *TaskUpdateOne) AddTags(t ...*TaskTag) *TaskUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddTagIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
@@ -662,6 +835,33 @@ func (tuo *TaskUpdateOne) RemoveMetrics(m ...*Metric) *TaskUpdateOne {
 		ids[i] = m[i].ID
 	}
 	return tuo.RemoveMetricIDs(ids...)
+}
+
+// ClearCategory clears the "category" edge to the TaskCategory entity.
+func (tuo *TaskUpdateOne) ClearCategory() *TaskUpdateOne {
+	tuo.mutation.ClearCategory()
+	return tuo
+}
+
+// ClearTags clears all "tags" edges to the TaskTag entity.
+func (tuo *TaskUpdateOne) ClearTags() *TaskUpdateOne {
+	tuo.mutation.ClearTags()
+	return tuo
+}
+
+// RemoveTagIDs removes the "tags" edge to TaskTag entities by IDs.
+func (tuo *TaskUpdateOne) RemoveTagIDs(ids ...int) *TaskUpdateOne {
+	tuo.mutation.RemoveTagIDs(ids...)
+	return tuo
+}
+
+// RemoveTags removes "tags" edges to TaskTag entities.
+func (tuo *TaskUpdateOne) RemoveTags(t ...*TaskTag) *TaskUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveTagIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -751,6 +951,9 @@ func (tuo *TaskUpdateOne) check() error {
 		if err := task.DescriptionValidator(v); err != nil {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Task.description": %w`, err)}
 		}
+	}
+	if _, ok := tuo.mutation.CategoryID(); tuo.mutation.CategoryCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Task.category"`)
 	}
 	return nil
 }
@@ -957,6 +1160,95 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.CategoryTable,
+			Columns: []string{task.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskcategory.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.CategoryTable,
+			Columns: []string{task.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskcategory.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedTagsIDs(); len(nodes) > 0 && !tuo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
 				},
 			},
 		}

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 )
 
 // Task is the model entity for the Task schema.
@@ -39,7 +40,8 @@ type Task struct {
 	Args map[string]interface{} `json:"args,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
-	Edges TaskEdges `json:"edges"`
+	Edges               TaskEdges `json:"edges"`
+	task_category_tasks *int
 }
 
 // TaskEdges holds the relations/edges for other nodes in the graph.
@@ -48,9 +50,13 @@ type TaskEdges struct {
 	Instances []*TaskInstance `json:"instances,omitempty"`
 	// Metrics holds the value of the metrics edge.
 	Metrics []*Metric `json:"metrics,omitempty"`
+	// Category holds the value of the category edge.
+	Category *TaskCategory `json:"category,omitempty"`
+	// Tags holds the value of the tags edge.
+	Tags []*TaskTag `json:"tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // InstancesOrErr returns the Instances value or an error if the edge
@@ -71,6 +77,29 @@ func (e TaskEdges) MetricsOrErr() ([]*Metric, error) {
 	return nil, &NotLoadedError{edge: "metrics"}
 }
 
+// CategoryOrErr returns the Category value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TaskEdges) CategoryOrErr() (*TaskCategory, error) {
+	if e.loadedTypes[2] {
+		if e.Category == nil {
+			// The edge category was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: taskcategory.Label}
+		}
+		return e.Category, nil
+	}
+	return nil, &NotLoadedError{edge: "category"}
+}
+
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) TagsOrErr() ([]*TaskTag, error) {
+	if e.loadedTypes[3] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Task) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
@@ -86,6 +115,8 @@ func (*Task) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case task.FieldCreateTime, task.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
+		case task.ForeignKeys[0]: // task_category_tasks
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Task", columns[i])
 		}
@@ -169,6 +200,13 @@ func (t *Task) assignValues(columns []string, values []interface{}) error {
 					return fmt.Errorf("unmarshal field args: %w", err)
 				}
 			}
+		case task.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field task_category_tasks", value)
+			} else if value.Valid {
+				t.task_category_tasks = new(int)
+				*t.task_category_tasks = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -182,6 +220,16 @@ func (t *Task) QueryInstances() *TaskInstanceQuery {
 // QueryMetrics queries the "metrics" edge of the Task entity.
 func (t *Task) QueryMetrics() *MetricQuery {
 	return (&TaskClient{config: t.config}).QueryMetrics(t)
+}
+
+// QueryCategory queries the "category" edge of the Task entity.
+func (t *Task) QueryCategory() *TaskCategoryQuery {
+	return (&TaskClient{config: t.config}).QueryCategory(t)
+}
+
+// QueryTags queries the "tags" edge of the Task entity.
+func (t *Task) QueryTags() *TaskTagQuery {
+	return (&TaskClient{config: t.config}).QueryTags(t)
 }
 
 // Update returns a builder for updating this Task.

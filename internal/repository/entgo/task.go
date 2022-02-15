@@ -2,6 +2,7 @@ package entgo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/DanielTitkov/dashboars/internal/domain/tasks"
 
@@ -19,17 +20,27 @@ func (r *EntgoRepository) GetActiveTaskCount(ctx context.Context) (int, error) {
 }
 
 func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task) (*domain.Task, error) {
+	var tagIDs []int
+	for _, tag := range t.Tags {
+		if tag.ID == 0 {
+			return nil, errors.New("tag must have valid ID")
+		}
+		tagIDs = append(tagIDs, tag.ID)
+	}
+
 	// query task by code
 	tsk, err := r.client.Task.
 		Query().
 		Where(task.CodeEQ(t.Code)).
+		WithCategory().
+		WithTags().
 		Only(ctx)
 	if err != nil {
 		if !ent.IsNotFound(err) {
 			return nil, err
 		}
 		// create task
-		tsk, err = r.client.Task.
+		tskQuery := r.client.Task.
 			Create().
 			SetCode(t.Code).
 			SetType(task.Type(t.Type)).
@@ -38,8 +49,17 @@ func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task
 			SetActive(t.Active).
 			SetDisplay(t.Display).
 			SetSchedule(t.Schedule).
-			SetArgs(t.Args.ToMap()).
-			Save(ctx)
+			SetArgs(t.Args.ToMap())
+
+		if t.Category != nil {
+			tskQuery.SetCategoryID(t.Category.ID)
+		}
+
+		if len(tagIDs) > 0 {
+			tskQuery.AddTagIDs(tagIDs...)
+		}
+
+		tsk, err = tskQuery.Save(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -47,16 +67,27 @@ func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task
 	}
 
 	// update task
-	tsk, err = tsk.Update().
+	tskUpdateQuery := tsk.Update().
 		SetTitle(t.Title).
 		SetDescription(t.Description).
 		SetActive(t.Active).
 		SetDisplay(t.Display).
-		SetSchedule(t.Schedule).
-		Save(ctx)
+		SetSchedule(t.Schedule)
+
+	if t.Category != nil {
+		tskUpdateQuery.SetCategoryID(t.Category.ID)
+	}
+
+	if len(tagIDs) > 0 {
+		tskUpdateQuery.AddTagIDs(tagIDs...)
+	}
+
+	tsk, err = tskUpdateQuery.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: maybe query task with edges to get updated tags and categories
 
 	return entToDomainTask(tsk)
 }
@@ -76,5 +107,17 @@ func entToDomainCreateTaskArgs(t *ent.Task) domain.CreateTaskArgs {
 }
 
 func entToDomainTask(t *ent.Task) (*domain.Task, error) {
-	return tasks.CreateTask(entToDomainCreateTaskArgs(t))
+	var category *domain.TaskCategory
+	if t.Edges.Category != nil {
+		category = entToDomainTaskCategory(t.Edges.Category)
+	}
+
+	var tags []*domain.TaskTag
+	if t.Edges.Tags != nil {
+		for _, tag := range t.Edges.Tags {
+			tags = append(tags, entToDomainTaskTag(tag))
+		}
+	}
+
+	return tasks.CreateTask(entToDomainCreateTaskArgs(t), category, tags)
 }

@@ -1,5 +1,10 @@
 [
     {
+        "category": "test",
+        "tags": [
+            "dev",
+            "test"
+        ],
         "type": "failing",
         "code": "fail",
         "title": "Failing",

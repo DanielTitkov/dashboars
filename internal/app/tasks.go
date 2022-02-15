@@ -80,13 +80,29 @@ func (a *App) loadTasksPresets() error {
 		}
 
 		for _, preset := range presets {
-			task, err := tasks.CreateTask(preset)
+			ctx := context.Background()
+
+			category, err := a.repo.GetOrCreateTaskCategory(ctx, &domain.TaskCategory{Title: preset.Category})
+			if err != nil {
+				a.log.Fatal("failed to get or create category", err)
+			}
+
+			var tags []*domain.TaskTag
+			for _, t := range preset.Tags {
+				tag, err := a.repo.GetOrCreateTaskTag(ctx, &domain.TaskTag{Title: t})
+				if err != nil {
+					a.log.Fatal("failed to get or create tag", err)
+				}
+				tags = append(tags, tag)
+			}
+
+			task, err := tasks.CreateTask(preset, category, tags)
 			if err != nil {
 				a.log.Fatal("failed to create task", err)
 			}
 
 			// saving to db, must have id after that
-			task, err = a.repo.CreateOrUpdateTask(context.Background(), task)
+			task, err = a.repo.CreateOrUpdateTask(ctx, task)
 			if err != nil {
 				a.log.Fatal("failed to save task to db", err)
 			}

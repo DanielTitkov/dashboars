@@ -15,16 +15,34 @@ type (
 	}
 
 	Task struct {
-		ID          int                                                                `json:"id"`
-		Type        string                                                             `json:"type"`
-		Code        string                                                             `json:"code"`
-		Title       string                                                             `json:"title"`
-		Description string                                                             `json:"description"`
-		Active      bool                                                               `json:"active"`
-		Display     bool                                                               `json:"display"`
-		Schedule    string                                                             `json:"schedule"`
-		Args        TaskArgs                                                           `json:"-"`
-		ResolveFn   func(context.Context, *Task, *TaskInstance) (*TaskInstance, error) `json:"-"`
+		ID          int
+		Type        string
+		Code        string
+		Title       string
+		Description string
+		Active      bool
+		Display     bool
+		Schedule    string
+		Category    *TaskCategory
+		Tags        []*TaskTag
+		Args        TaskArgs
+		ResolveFn   func(context.Context, *Task, *TaskInstance) (*TaskInstance, error)
+	}
+
+	TaskCategory struct {
+		ID          int
+		Title       string
+		Description string
+		Display     bool
+		Meta        map[string]interface{}
+	}
+
+	TaskTag struct {
+		ID          int
+		Title       string
+		Description string
+		Display     bool
+		Meta        map[string]interface{}
 	}
 
 	TaskInstance struct {

@@ -28,7 +28,9 @@ type hooks struct {
 	Item         []ent.Hook
 	Metric       []ent.Hook
 	Task         []ent.Hook
+	TaskCategory []ent.Hook
 	TaskInstance []ent.Hook
+	TaskTag      []ent.Hook
 }
 
 // Options applies the options on the config object.

@@ -36,6 +36,9 @@ func (Task) Edges() []ent.Edge {
 		// has
 		edge.To("instances", TaskInstance.Type),
 		edge.To("metrics", Metric.Type),
+		// belongs to
+		edge.From("category", TaskCategory.Type).Ref("tasks").Unique().Required(),
+		edge.From("tags", TaskTag.Type).Ref("tasks"),
 	}
 }
 

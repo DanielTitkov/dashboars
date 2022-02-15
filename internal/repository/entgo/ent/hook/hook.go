@@ -61,6 +61,19 @@ func (f TaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
+// The TaskCategoryFunc type is an adapter to allow the use of ordinary
+// function as TaskCategory mutator.
+type TaskCategoryFunc func(context.Context, *ent.TaskCategoryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TaskCategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.TaskCategoryMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskCategoryMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The TaskInstanceFunc type is an adapter to allow the use of ordinary
 // function as TaskInstance mutator.
 type TaskInstanceFunc func(context.Context, *ent.TaskInstanceMutation) (ent.Value, error)
@@ -70,6 +83,19 @@ func (f TaskInstanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	mv, ok := m.(*ent.TaskInstanceMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskInstanceMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The TaskTagFunc type is an adapter to allow the use of ordinary
+// function as TaskTag mutator.
+type TaskTagFunc func(context.Context, *ent.TaskTagMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TaskTagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.TaskTagMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskTagMutation", m)
 	}
 	return f(ctx, mv)
 }

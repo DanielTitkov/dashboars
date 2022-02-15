@@ -20,8 +20,12 @@ type Tx struct {
 	Metric *MetricClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskCategory is the client for interacting with the TaskCategory builders.
+	TaskCategory *TaskCategoryClient
 	// TaskInstance is the client for interacting with the TaskInstance builders.
 	TaskInstance *TaskInstanceClient
+	// TaskTag is the client for interacting with the TaskTag builders.
+	TaskTag *TaskTagClient
 
 	// lazily loaded.
 	client     *Client
@@ -161,7 +165,9 @@ func (tx *Tx) init() {
 	tx.Item = NewItemClient(tx.config)
 	tx.Metric = NewMetricClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
+	tx.TaskCategory = NewTaskCategoryClient(tx.config)
 	tx.TaskInstance = NewTaskInstanceClient(tx.config)
+	tx.TaskTag = NewTaskTagClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

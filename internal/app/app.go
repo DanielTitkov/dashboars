@@ -27,6 +27,10 @@ type (
 		CreateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
 		UpdateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
 
+		// tags and categories
+		GetOrCreateTaskCategory(context.Context, *domain.TaskCategory) (*domain.TaskCategory, error)
+		GetOrCreateTaskTag(context.Context, *domain.TaskTag) (*domain.TaskTag, error)
+
 		// for system summary
 		GetItemCount(ctx context.Context) (int, error)
 		GetMetricCount(ctx context.Context) (int, error)

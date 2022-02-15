@@ -15,7 +15,9 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/predicate"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 )
 
 // TaskQuery is the builder for querying Task entities.
@@ -30,6 +32,9 @@ type TaskQuery struct {
 	// eager-loading edges.
 	withInstances *TaskInstanceQuery
 	withMetrics   *MetricQuery
+	withCategory  *TaskCategoryQuery
+	withTags      *TaskTagQuery
+	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -103,6 +108,50 @@ func (tq *TaskQuery) QueryMetrics() *MetricQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(metric.Table, metric.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.MetricsTable, task.MetricsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCategory chains the current query on the "category" edge.
+func (tq *TaskQuery) QueryCategory() *TaskCategoryQuery {
+	query := &TaskCategoryQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(taskcategory.Table, taskcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.CategoryTable, task.CategoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTags chains the current query on the "tags" edge.
+func (tq *TaskQuery) QueryTags() *TaskTagQuery {
+	query := &TaskTagQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(tasktag.Table, tasktag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, task.TagsTable, task.TagsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -293,6 +342,8 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		predicates:    append([]predicate.Task{}, tq.predicates...),
 		withInstances: tq.withInstances.Clone(),
 		withMetrics:   tq.withMetrics.Clone(),
+		withCategory:  tq.withCategory.Clone(),
+		withTags:      tq.withTags.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -318,6 +369,28 @@ func (tq *TaskQuery) WithMetrics(opts ...func(*MetricQuery)) *TaskQuery {
 		opt(query)
 	}
 	tq.withMetrics = query
+	return tq
+}
+
+// WithCategory tells the query-builder to eager-load the nodes that are connected to
+// the "category" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithCategory(opts ...func(*TaskCategoryQuery)) *TaskQuery {
+	query := &TaskCategoryQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withCategory = query
+	return tq
+}
+
+// WithTags tells the query-builder to eager-load the nodes that are connected to
+// the "tags" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithTags(opts ...func(*TaskTagQuery)) *TaskQuery {
+	query := &TaskTagQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withTags = query
 	return tq
 }
 
@@ -385,12 +458,21 @@ func (tq *TaskQuery) prepareQuery(ctx context.Context) error {
 func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 	var (
 		nodes       = []*Task{}
+		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			tq.withInstances != nil,
 			tq.withMetrics != nil,
+			tq.withCategory != nil,
+			tq.withTags != nil,
 		}
 	)
+	if tq.withCategory != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, task.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Task{config: tq.config}
 		nodes = append(nodes, node)
@@ -466,6 +548,100 @@ func (tq *TaskQuery) sqlAll(ctx context.Context) ([]*Task, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "task_metrics" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Metrics = append(node.Edges.Metrics, n)
+		}
+	}
+
+	if query := tq.withCategory; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Task)
+		for i := range nodes {
+			if nodes[i].task_category_tasks == nil {
+				continue
+			}
+			fk := *nodes[i].task_category_tasks
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(taskcategory.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "task_category_tasks" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Category = n
+			}
+		}
+	}
+
+	if query := tq.withTags; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Task, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Tags = []*TaskTag{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Task)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   task.TagsTable,
+				Columns: task.TagsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(task.TagsPrimaryKey[1], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, tq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "tags": %w`, err)
+		}
+		query.Where(tasktag.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "tags" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Tags = append(nodes[i].Edges.Tags, n)
+			}
 		}
 	}
 

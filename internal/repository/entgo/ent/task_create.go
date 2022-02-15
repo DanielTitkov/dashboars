@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 )
 
 // TaskCreate is the builder for creating a Task entity.
@@ -160,6 +162,32 @@ func (tc *TaskCreate) AddMetrics(m ...*Metric) *TaskCreate {
 	return tc.AddMetricIDs(ids...)
 }
 
+// SetCategoryID sets the "category" edge to the TaskCategory entity by ID.
+func (tc *TaskCreate) SetCategoryID(id int) *TaskCreate {
+	tc.mutation.SetCategoryID(id)
+	return tc
+}
+
+// SetCategory sets the "category" edge to the TaskCategory entity.
+func (tc *TaskCreate) SetCategory(t *TaskCategory) *TaskCreate {
+	return tc.SetCategoryID(t.ID)
+}
+
+// AddTagIDs adds the "tags" edge to the TaskTag entity by IDs.
+func (tc *TaskCreate) AddTagIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddTagIDs(ids...)
+	return tc
+}
+
+// AddTags adds the "tags" edges to the TaskTag entity.
+func (tc *TaskCreate) AddTags(t ...*TaskTag) *TaskCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddTagIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tc *TaskCreate) Mutation() *TaskMutation {
 	return tc.mutation
@@ -291,6 +319,9 @@ func (tc *TaskCreate) check() error {
 	}
 	if _, ok := tc.mutation.Display(); !ok {
 		return &ValidationError{Name: "display", err: errors.New(`ent: missing required field "Task.display"`)}
+	}
+	if _, ok := tc.mutation.CategoryID(); !ok {
+		return &ValidationError{Name: "category", err: errors.New(`ent: missing required edge "Task.category"`)}
 	}
 	return nil
 }
@@ -429,6 +460,45 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: metric.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   task.CategoryTable,
+			Columns: []string{task.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: taskcategory.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.task_category_tasks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   task.TagsTable,
+			Columns: task.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tasktag.FieldID,
 				},
 			},
 		}

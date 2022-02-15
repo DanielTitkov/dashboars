@@ -104,12 +104,37 @@ var (
 		{Name: "display", Type: field.TypeBool, Default: false},
 		{Name: "schedule", Type: field.TypeString, Nullable: true},
 		{Name: "args", Type: field.TypeJSON, Nullable: true},
+		{Name: "task_category_tasks", Type: field.TypeInt, Nullable: true},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
 	TasksTable = &schema.Table{
 		Name:       "tasks",
 		Columns:    TasksColumns,
 		PrimaryKey: []*schema.Column{TasksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tasks_task_categories_tasks",
+				Columns:    []*schema.Column{TasksColumns[11]},
+				RefColumns: []*schema.Column{TaskCategoriesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// TaskCategoriesColumns holds the columns for the "task_categories" table.
+	TaskCategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 280},
+		{Name: "display", Type: field.TypeBool, Default: false},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+	}
+	// TaskCategoriesTable holds the schema information for the "task_categories" table.
+	TaskCategoriesTable = &schema.Table{
+		Name:       "task_categories",
+		Columns:    TaskCategoriesColumns,
+		PrimaryKey: []*schema.Column{TaskCategoriesColumns[0]},
 	}
 	// TaskInstancesColumns holds the columns for the "task_instances" table.
 	TaskInstancesColumns = []*schema.Column{
@@ -139,6 +164,22 @@ var (
 			},
 		},
 	}
+	// TaskTagsColumns holds the columns for the "task_tags" table.
+	TaskTagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 280},
+		{Name: "display", Type: field.TypeBool, Default: false},
+		{Name: "meta", Type: field.TypeJSON, Nullable: true},
+	}
+	// TaskTagsTable holds the schema information for the "task_tags" table.
+	TaskTagsTable = &schema.Table{
+		Name:       "task_tags",
+		Columns:    TaskTagsColumns,
+		PrimaryKey: []*schema.Column{TaskTagsColumns[0]},
+	}
 	// ItemDimensionsColumns holds the columns for the "item_dimensions" table.
 	ItemDimensionsColumns = []*schema.Column{
 		{Name: "item_id", Type: field.TypeInt},
@@ -164,14 +205,42 @@ var (
 			},
 		},
 	}
+	// TaskTagTasksColumns holds the columns for the "task_tag_tasks" table.
+	TaskTagTasksColumns = []*schema.Column{
+		{Name: "task_tag_id", Type: field.TypeInt},
+		{Name: "task_id", Type: field.TypeInt},
+	}
+	// TaskTagTasksTable holds the schema information for the "task_tag_tasks" table.
+	TaskTagTasksTable = &schema.Table{
+		Name:       "task_tag_tasks",
+		Columns:    TaskTagTasksColumns,
+		PrimaryKey: []*schema.Column{TaskTagTasksColumns[0], TaskTagTasksColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "task_tag_tasks_task_tag_id",
+				Columns:    []*schema.Column{TaskTagTasksColumns[0]},
+				RefColumns: []*schema.Column{TaskTagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "task_tag_tasks_task_id",
+				Columns:    []*schema.Column{TaskTagTasksColumns[1]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		DimensionsTable,
 		ItemsTable,
 		MetricsTable,
 		TasksTable,
+		TaskCategoriesTable,
 		TaskInstancesTable,
+		TaskTagsTable,
 		ItemDimensionsTable,
+		TaskTagTasksTable,
 	}
 )
 
@@ -179,7 +248,10 @@ func init() {
 	ItemsTable.ForeignKeys[0].RefTable = MetricsTable
 	ItemsTable.ForeignKeys[1].RefTable = TaskInstancesTable
 	MetricsTable.ForeignKeys[0].RefTable = TasksTable
+	TasksTable.ForeignKeys[0].RefTable = TaskCategoriesTable
 	TaskInstancesTable.ForeignKeys[0].RefTable = TasksTable
 	ItemDimensionsTable.ForeignKeys[0].RefTable = ItemsTable
 	ItemDimensionsTable.ForeignKeys[1].RefTable = DimensionsTable
+	TaskTagTasksTable.ForeignKeys[0].RefTable = TaskTagsTable
+	TaskTagTasksTable.ForeignKeys[1].RefTable = TasksTable
 }

@@ -12,7 +12,9 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -37,7 +39,9 @@ func columnChecker(table string) func(string) error {
 		item.Table:         item.ValidColumn,
 		metric.Table:       metric.ValidColumn,
 		task.Table:         task.ValidColumn,
+		taskcategory.Table: taskcategory.ValidColumn,
 		taskinstance.Table: taskinstance.ValidColumn,
+		tasktag.Table:      tasktag.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

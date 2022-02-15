@@ -13,7 +13,9 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/item"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/metric"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/task"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskcategory"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/taskinstance"
+	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent/tasktag"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -33,8 +35,12 @@ type Client struct {
 	Metric *MetricClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskCategory is the client for interacting with the TaskCategory builders.
+	TaskCategory *TaskCategoryClient
 	// TaskInstance is the client for interacting with the TaskInstance builders.
 	TaskInstance *TaskInstanceClient
+	// TaskTag is the client for interacting with the TaskTag builders.
+	TaskTag *TaskTagClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -52,7 +58,9 @@ func (c *Client) init() {
 	c.Item = NewItemClient(c.config)
 	c.Metric = NewMetricClient(c.config)
 	c.Task = NewTaskClient(c.config)
+	c.TaskCategory = NewTaskCategoryClient(c.config)
 	c.TaskInstance = NewTaskInstanceClient(c.config)
+	c.TaskTag = NewTaskTagClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -90,7 +98,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Item:         NewItemClient(cfg),
 		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
+		TaskCategory: NewTaskCategoryClient(cfg),
 		TaskInstance: NewTaskInstanceClient(cfg),
+		TaskTag:      NewTaskTagClient(cfg),
 	}, nil
 }
 
@@ -114,7 +124,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Item:         NewItemClient(cfg),
 		Metric:       NewMetricClient(cfg),
 		Task:         NewTaskClient(cfg),
+		TaskCategory: NewTaskCategoryClient(cfg),
 		TaskInstance: NewTaskInstanceClient(cfg),
+		TaskTag:      NewTaskTagClient(cfg),
 	}, nil
 }
 
@@ -148,7 +160,9 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Item.Use(hooks...)
 	c.Metric.Use(hooks...)
 	c.Task.Use(hooks...)
+	c.TaskCategory.Use(hooks...)
 	c.TaskInstance.Use(hooks...)
+	c.TaskTag.Use(hooks...)
 }
 
 // DimensionClient is a client for the Dimension schema.
@@ -634,9 +648,147 @@ func (c *TaskClient) QueryMetrics(t *Task) *MetricQuery {
 	return query
 }
 
+// QueryCategory queries the category edge of a Task.
+func (c *TaskClient) QueryCategory(t *Task) *TaskCategoryQuery {
+	query := &TaskCategoryQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(taskcategory.Table, taskcategory.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, task.CategoryTable, task.CategoryColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTags queries the tags edge of a Task.
+func (c *TaskClient) QueryTags(t *Task) *TaskTagQuery {
+	query := &TaskTagQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(tasktag.Table, tasktag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, task.TagsTable, task.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
+}
+
+// TaskCategoryClient is a client for the TaskCategory schema.
+type TaskCategoryClient struct {
+	config
+}
+
+// NewTaskCategoryClient returns a client for the TaskCategory from the given config.
+func NewTaskCategoryClient(c config) *TaskCategoryClient {
+	return &TaskCategoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `taskcategory.Hooks(f(g(h())))`.
+func (c *TaskCategoryClient) Use(hooks ...Hook) {
+	c.hooks.TaskCategory = append(c.hooks.TaskCategory, hooks...)
+}
+
+// Create returns a create builder for TaskCategory.
+func (c *TaskCategoryClient) Create() *TaskCategoryCreate {
+	mutation := newTaskCategoryMutation(c.config, OpCreate)
+	return &TaskCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TaskCategory entities.
+func (c *TaskCategoryClient) CreateBulk(builders ...*TaskCategoryCreate) *TaskCategoryCreateBulk {
+	return &TaskCategoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TaskCategory.
+func (c *TaskCategoryClient) Update() *TaskCategoryUpdate {
+	mutation := newTaskCategoryMutation(c.config, OpUpdate)
+	return &TaskCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TaskCategoryClient) UpdateOne(tc *TaskCategory) *TaskCategoryUpdateOne {
+	mutation := newTaskCategoryMutation(c.config, OpUpdateOne, withTaskCategory(tc))
+	return &TaskCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TaskCategoryClient) UpdateOneID(id int) *TaskCategoryUpdateOne {
+	mutation := newTaskCategoryMutation(c.config, OpUpdateOne, withTaskCategoryID(id))
+	return &TaskCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TaskCategory.
+func (c *TaskCategoryClient) Delete() *TaskCategoryDelete {
+	mutation := newTaskCategoryMutation(c.config, OpDelete)
+	return &TaskCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TaskCategoryClient) DeleteOne(tc *TaskCategory) *TaskCategoryDeleteOne {
+	return c.DeleteOneID(tc.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TaskCategoryClient) DeleteOneID(id int) *TaskCategoryDeleteOne {
+	builder := c.Delete().Where(taskcategory.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TaskCategoryDeleteOne{builder}
+}
+
+// Query returns a query builder for TaskCategory.
+func (c *TaskCategoryClient) Query() *TaskCategoryQuery {
+	return &TaskCategoryQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a TaskCategory entity by its id.
+func (c *TaskCategoryClient) Get(ctx context.Context, id int) (*TaskCategory, error) {
+	return c.Query().Where(taskcategory.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TaskCategoryClient) GetX(ctx context.Context, id int) *TaskCategory {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTasks queries the tasks edge of a TaskCategory.
+func (c *TaskCategoryClient) QueryTasks(tc *TaskCategory) *TaskQuery {
+	query := &TaskQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := tc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(taskcategory.Table, taskcategory.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, taskcategory.TasksTable, taskcategory.TasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(tc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TaskCategoryClient) Hooks() []Hook {
+	return c.hooks.TaskCategory
 }
 
 // TaskInstanceClient is a client for the TaskInstance schema.
@@ -759,4 +911,110 @@ func (c *TaskInstanceClient) QueryTask(ti *TaskInstance) *TaskQuery {
 // Hooks returns the client hooks.
 func (c *TaskInstanceClient) Hooks() []Hook {
 	return c.hooks.TaskInstance
+}
+
+// TaskTagClient is a client for the TaskTag schema.
+type TaskTagClient struct {
+	config
+}
+
+// NewTaskTagClient returns a client for the TaskTag from the given config.
+func NewTaskTagClient(c config) *TaskTagClient {
+	return &TaskTagClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tasktag.Hooks(f(g(h())))`.
+func (c *TaskTagClient) Use(hooks ...Hook) {
+	c.hooks.TaskTag = append(c.hooks.TaskTag, hooks...)
+}
+
+// Create returns a create builder for TaskTag.
+func (c *TaskTagClient) Create() *TaskTagCreate {
+	mutation := newTaskTagMutation(c.config, OpCreate)
+	return &TaskTagCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TaskTag entities.
+func (c *TaskTagClient) CreateBulk(builders ...*TaskTagCreate) *TaskTagCreateBulk {
+	return &TaskTagCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TaskTag.
+func (c *TaskTagClient) Update() *TaskTagUpdate {
+	mutation := newTaskTagMutation(c.config, OpUpdate)
+	return &TaskTagUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TaskTagClient) UpdateOne(tt *TaskTag) *TaskTagUpdateOne {
+	mutation := newTaskTagMutation(c.config, OpUpdateOne, withTaskTag(tt))
+	return &TaskTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TaskTagClient) UpdateOneID(id int) *TaskTagUpdateOne {
+	mutation := newTaskTagMutation(c.config, OpUpdateOne, withTaskTagID(id))
+	return &TaskTagUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TaskTag.
+func (c *TaskTagClient) Delete() *TaskTagDelete {
+	mutation := newTaskTagMutation(c.config, OpDelete)
+	return &TaskTagDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TaskTagClient) DeleteOne(tt *TaskTag) *TaskTagDeleteOne {
+	return c.DeleteOneID(tt.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TaskTagClient) DeleteOneID(id int) *TaskTagDeleteOne {
+	builder := c.Delete().Where(tasktag.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TaskTagDeleteOne{builder}
+}
+
+// Query returns a query builder for TaskTag.
+func (c *TaskTagClient) Query() *TaskTagQuery {
+	return &TaskTagQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a TaskTag entity by its id.
+func (c *TaskTagClient) Get(ctx context.Context, id int) (*TaskTag, error) {
+	return c.Query().Where(tasktag.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TaskTagClient) GetX(ctx context.Context, id int) *TaskTag {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTasks queries the tasks edge of a TaskTag.
+func (c *TaskTagClient) QueryTasks(tt *TaskTag) *TaskQuery {
+	query := &TaskQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := tt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tasktag.Table, tasktag.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, tasktag.TasksTable, tasktag.TasksPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(tt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TaskTagClient) Hooks() []Hook {
+	return c.hooks.TaskTag
 }

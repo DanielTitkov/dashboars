@@ -36,7 +36,7 @@ func randomTaskArgsFromMap(args map[string]interface{}) (*RandomTaskArgs, error)
 	}, nil
 }
 
-func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
+func NewRandomTask(args domain.CreateTaskArgs, cat *domain.TaskCategory, tags []*domain.TaskTag) (*domain.Task, error) {
 	taskArgs, err := randomTaskArgsFromMap(args.Args)
 	if err != nil {
 		return nil, err
@@ -52,6 +52,8 @@ func NewRandomTask(args domain.CreateTaskArgs) (*domain.Task, error) {
 		Display:     args.Display,
 		Schedule:    args.Schedule,
 		Args:        taskArgs,
+		Category:    cat,
+		Tags:        tags,
 		ResolveFn:   RandomTaskResolveFn,
 	}, nil
 }

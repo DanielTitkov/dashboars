@@ -2,12 +2,15 @@ package parser
 
 import (
 	"encoding/json"
+	"log"
 	"net/url"
 	"regexp"
 	"time"
 
 	"github.com/gocolly/colly"
 )
+
+const defaultStripRegexp = "[^[:graph:] ]+"
 
 type (
 	Parser struct {
@@ -23,9 +26,10 @@ type (
 		Get []Get
 	}
 	Get struct {
-		Elem  string
-		Strip bool
-		To    To
+		Elem        string
+		Strip       bool
+		StripRegexp string
+		To          To
 	}
 	To struct {
 		Name  string
@@ -66,13 +70,14 @@ func New(cfg *Config) *Parser {
 func (p *Parser) Run() (*Result, error) {
 	startTime := time.Now()
 
-	reg, err := regexp.Compile("[^[:graph:] ]+")
+	reg, err := regexp.Compile(defaultStripRegexp)
 	if err != nil {
 		return nil, err
 	}
 
 	var resultItems []ResultItem
 	for _, visit := range p.Cfg.Visit {
+		log.Println("NEXT VISIT") // FIXME
 		baseURL, err := url.Parse(visit.URL)
 		if err != nil {
 			return nil, err
@@ -96,6 +101,14 @@ func (p *Parser) Run() (*Result, error) {
 			for _, get := range visit.Get {
 				value := e.ChildText(get.Elem)
 				if get.Strip {
+					var err error
+					if get.StripRegexp != "" {
+						reg, err = regexp.Compile(get.StripRegexp)
+						if err != nil {
+							// TODO: probably send this errors to some channel
+							continue
+						}
+					}
 					value = reg.ReplaceAllString(value, "")
 				}
 
@@ -113,6 +126,7 @@ func (p *Parser) Run() (*Result, error) {
 		if err != nil {
 			return nil, err
 		}
+		log.Println("VISIT DONE") // FIXME
 	}
 
 	endTime := time.Now()

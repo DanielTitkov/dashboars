@@ -1,0 +1,29 @@
+{
+    "delay": 2,
+    "randomDelay": 1,
+    "visit": [
+      {
+        "url": "https://spb.cian.ru/kupit-kvartiru/",
+        "get": [
+          {
+            "elem": "h5._93444fe79c--color_black_100--kPHhJ",
+            "strip": true,
+            "stripRegexp": "[^0-9]",
+            "to": {
+              "name": "offers",
+              "attrs": [
+                {
+                  "name": "deal_type",
+                  "value": "buy"
+                },
+                {
+                  "name": "location",
+                  "value": "spb"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }

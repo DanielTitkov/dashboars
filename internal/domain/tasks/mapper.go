@@ -12,6 +12,8 @@ func getTaskConstructorFn(args domain.CreateTaskArgs) (func(domain.CreateTaskArg
 		return NewRandomTask, nil
 	case domain.TaskTypeFailing:
 		return NewFailingTask, nil
+	case domain.TaskTypeParser:
+		return NewParserTask, nil
 	default:
 		return nil, errors.New("unknown task type: " + args.Type)
 	}

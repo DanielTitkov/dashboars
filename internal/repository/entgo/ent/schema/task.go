@@ -19,6 +19,7 @@ func (Task) Fields() []ent.Field {
 		field.Enum("type").Values(
 			domain.TaskTypeRandom,
 			domain.TaskTypeFailing,
+			domain.TaskTypeParser,
 		).Immutable(),
 		field.String("code").Unique().NotEmpty().Immutable(),
 		field.String("title").Unique().NotEmpty(),

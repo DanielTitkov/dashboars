@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/DanielTitkov/dashboars/internal/domain"
@@ -48,7 +49,11 @@ func (a *FailingTaskArgs) ToMap() map[string]interface{} {
 	return make(map[string]interface{})
 }
 
+func (a *FailingTaskArgs) ToJSON() json.RawMessage {
+	return json.RawMessage{}
+}
+
 func FailingTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskInstance) (*domain.TaskInstance, error) {
 	err := errors.New("test error from failing task")
-	return ti.WithError(err), err
+	return ti.WithError(err, nil), err
 }

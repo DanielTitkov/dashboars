@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type (
 		GetFloat(string) (float64, bool)
 		GetInt(string) (int, bool)
 		ToMap() map[string]interface{}
+		ToJSON() json.RawMessage
 	}
 
 	Task struct {

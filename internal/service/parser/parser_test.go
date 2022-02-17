@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"io/ioutil"
+	"strconv"
 	"testing"
 	"time"
 
@@ -65,6 +67,28 @@ func TestConfigFromJSON(t *testing.T) {
 	}
 
 	assert.Equal(t, &testConfig, cfg)
+}
+
+func TestParseFloat(t *testing.T) {
+	data, err := ioutil.ReadFile("./test/cian_config.json")
+	if err != nil {
+		t.Error("failed to load test config", err)
+	}
+	cfg, err := ConfigFromJSON(data)
+	if err != nil {
+		t.Error("failed to read test config", err)
+	}
+
+	fmt.Println(cfg)
+	p := New(cfg)
+	res, err := p.Run()
+	assert.Nil(t, err)
+	assert.NotNil(t, res)
+
+	assert.NotEqual(t, 0, len(res.Items), "parser hasn't returned no values")
+	valueFloat, err := strconv.ParseFloat(res.Items[0].Value, 64)
+	assert.Nil(t, err, "failed to parse return value")
+	assert.Greater(t, valueFloat, 0.0, "0 flats on cian? it should be end of the world, ok.")
 }
 
 func TestParserRun(t *testing.T) {

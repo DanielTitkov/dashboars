@@ -96,7 +96,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"random", "failing"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"random", "failing", "parser"}},
 		{Name: "code", Type: field.TypeString, Unique: true},
 		{Name: "title", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 280},

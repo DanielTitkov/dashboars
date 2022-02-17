@@ -22,10 +22,11 @@ func (ti *TaskInstance) WithSuccess(items []*Item) *TaskInstance {
 	return ti
 }
 
-func (ti *TaskInstance) WithError(err error) *TaskInstance {
+func (ti *TaskInstance) WithError(err error, items []*Item) *TaskInstance {
 	ti.Error = err
 	ti.Success = false
 	ti.Running = false
 	ti.EndTime = time.Now()
+	ti.Items = items // maybe we need to store items even the task has failed at some point
 	return ti
 }

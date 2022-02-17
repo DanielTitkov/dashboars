@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"math/rand"
 	"time"
 
@@ -19,25 +20,9 @@ type RandomTaskArgs struct {
 	Max float64 `json:"max"`
 }
 
-func randomTaskArgsFromMap(args map[string]interface{}) (*RandomTaskArgs, error) {
-	min, err := requireFloat(args, argMin)
-	if err != nil {
-		return nil, err
-	}
-
-	max, err := requireFloat(args, argMax)
-	if err != nil {
-		return nil, err
-	}
-
-	return &RandomTaskArgs{
-		Max: max,
-		Min: min,
-	}, nil
-}
-
 func NewRandomTask(args domain.CreateTaskArgs, cat *domain.TaskCategory, tags []*domain.TaskTag) (*domain.Task, error) {
-	taskArgs, err := randomTaskArgsFromMap(args.Args)
+	var taskArgs RandomTaskArgs
+	err := json.Unmarshal(args.Args, &taskArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +36,7 @@ func NewRandomTask(args domain.CreateTaskArgs, cat *domain.TaskCategory, tags []
 		Active:      args.Active,
 		Display:     args.Display,
 		Schedule:    args.Schedule,
-		Args:        taskArgs,
+		Args:        &taskArgs,
 		Category:    cat,
 		Tags:        tags,
 		ResolveFn:   RandomTaskResolveFn,
@@ -86,15 +71,25 @@ func (a *RandomTaskArgs) ToMap() map[string]interface{} {
 	return util.ToMap(a)
 }
 
+func (a *RandomTaskArgs) ToJSON() json.RawMessage {
+	ret, err := json.Marshal(a)
+	if err != nil {
+		panic(err) // FIXME
+	}
+	return ret
+}
+
 func RandomTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskInstance) (*domain.TaskInstance, error) {
 	min, ok := t.Args.GetFloat(argMin)
 	if !ok {
-		return ti.WithError(newArgError(argMin)), newArgError(argMin)
+		err := newArgError(argMin)
+		return ti.WithError(err, nil), err
 	}
 
 	max, ok := t.Args.GetFloat(argMax)
 	if !ok {
-		return ti.WithError(newArgError(argMax)), newArgError(argMax)
+		err := newArgError(argMax)
+		return ti.WithError(err, nil), err
 	}
 
 	metricRaw := &domain.Metric{

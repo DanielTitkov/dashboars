@@ -2,6 +2,7 @@ package entgo
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/DanielTitkov/dashboars/internal/domain/tasks"
@@ -72,7 +73,8 @@ func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task
 		SetDescription(t.Description).
 		SetActive(t.Active).
 		SetDisplay(t.Display).
-		SetSchedule(t.Schedule)
+		SetSchedule(t.Schedule).
+		SetArgs(t.Args.ToMap())
 
 	if t.Category != nil {
 		tskUpdateQuery.SetCategoryID(t.Category.ID)
@@ -94,6 +96,11 @@ func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task
 }
 
 func entToDomainCreateTaskArgs(t *ent.Task) domain.CreateTaskArgs {
+	jsonArgs, err := json.Marshal(t.Args)
+	if err != nil {
+		panic(err) // FIXME
+	}
+
 	return domain.CreateTaskArgs{
 		ID:          t.ID,
 		Code:        t.Code,
@@ -103,7 +110,7 @@ func entToDomainCreateTaskArgs(t *ent.Task) domain.CreateTaskArgs {
 		Active:      t.Active,
 		Description: t.Description,
 		Schedule:    t.Schedule,
-		Args:        t.Args,
+		Args:        jsonArgs,
 	}
 }
 

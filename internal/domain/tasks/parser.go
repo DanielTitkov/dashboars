@@ -10,6 +10,7 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/domain"
 	"github.com/DanielTitkov/dashboars/internal/service/parser"
 	"github.com/DanielTitkov/dashboars/internal/util"
+	"github.com/hashicorp/go-multierror"
 )
 
 const (
@@ -92,24 +93,27 @@ func ParserTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 	}
 
 	var resultItems []*domain.Item
+	var errs error
 	for _, cfg := range parserCfg {
 		p := parser.New(&cfg)
 		fmt.Println("RUNNING PARSER TASK", cfg) // FIXME
 		result, err := p.Run()
 		if err != nil {
-			return ti.WithError(err, nil), err
+			errs = multierror.Append(errs, err)
+			continue
 		}
 
 		for _, it := range result.Items {
 			metric, ok := metricsMap[it.Name]
 			if !ok {
-				err := fmt.Errorf("metric not found: %s, must be set in task arguments", it.Name)
-				return ti.WithError(err, nil), err
+				errs = multierror.Append(errs, fmt.Errorf("metric not found: %s, must be set in task arguments", it.Name))
+				continue
 			}
 
 			value, err := strconv.ParseFloat(it.Value, 64)
 			if err != nil {
-				return ti.WithError(err, nil), err
+				errs = multierror.Append(errs, err)
+				continue
 			}
 
 			var dimensions []*domain.Dimension
@@ -130,6 +134,10 @@ func ParserTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 		}
 
 		fmt.Println("PARSER RESULT", result) // FIXME
+	}
+
+	if errs != nil {
+		return ti.WithError(errs, resultItems), errs
 	}
 
 	return ti.WithSuccess(resultItems), nil

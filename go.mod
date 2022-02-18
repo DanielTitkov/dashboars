@@ -12,6 +12,7 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jfyne/live v0.14.1 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/lib/pq v1.10.4 // indirect

@@ -9,8 +9,11 @@
         "code": "fail",
         "title": "Failing",
         "description": "failing task for testing purposes",
-        "active": false,
-        "schedule": "4m",
-        "args": {}
+        "active": true,
+        "schedule": "1m",
+        "args": {
+            "itemsNumber": 5,
+            "failOnEvery": 2
+        }
     }
 ]

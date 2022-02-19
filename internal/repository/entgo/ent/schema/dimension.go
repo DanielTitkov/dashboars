@@ -18,6 +18,8 @@ func (Dimension) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("title").NotEmpty(),
 		field.String("value").NotEmpty(),
+		field.JSON("display_title", make(map[string]string)).Optional(),
+		field.JSON("display_value", make(map[string]string)).Optional(),
 		field.JSON("meta", make(map[string]interface{})).Optional(),
 	}
 }

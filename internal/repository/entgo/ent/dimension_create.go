@@ -47,6 +47,18 @@ func (dc *DimensionCreate) SetValue(s string) *DimensionCreate {
 	return dc
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (dc *DimensionCreate) SetDisplayTitle(m map[string]string) *DimensionCreate {
+	dc.mutation.SetDisplayTitle(m)
+	return dc
+}
+
+// SetDisplayValue sets the "display_value" field.
+func (dc *DimensionCreate) SetDisplayValue(m map[string]string) *DimensionCreate {
+	dc.mutation.SetDisplayValue(m)
+	return dc
+}
+
 // SetMeta sets the "meta" field.
 func (dc *DimensionCreate) SetMeta(m map[string]interface{}) *DimensionCreate {
 	dc.mutation.SetMeta(m)
@@ -216,6 +228,22 @@ func (dc *DimensionCreate) createSpec() (*Dimension, *sqlgraph.CreateSpec) {
 			Column: dimension.FieldValue,
 		})
 		_node.Value = value
+	}
+	if value, ok := dc.mutation.DisplayTitle(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayTitle,
+		})
+		_node.DisplayTitle = value
+	}
+	if value, ok := dc.mutation.DisplayValue(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayValue,
+		})
+		_node.DisplayValue = value
 	}
 	if value, ok := dc.mutation.Meta(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

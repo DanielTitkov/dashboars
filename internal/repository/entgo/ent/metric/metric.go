@@ -17,6 +17,8 @@ const (
 	FieldUpdateTime = "update_time"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
+	// FieldDisplayTitle holds the string denoting the display_title field in the database.
+	FieldDisplayTitle = "display_title"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
 	// FieldMeta holds the string denoting the meta field in the database.
@@ -49,6 +51,7 @@ var Columns = []string{
 	FieldCreateTime,
 	FieldUpdateTime,
 	FieldTitle,
+	FieldDisplayTitle,
 	FieldDescription,
 	FieldMeta,
 }

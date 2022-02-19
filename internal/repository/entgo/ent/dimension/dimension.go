@@ -17,6 +17,10 @@ const (
 	FieldTitle = "title"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
+	// FieldDisplayTitle holds the string denoting the display_title field in the database.
+	FieldDisplayTitle = "display_title"
+	// FieldDisplayValue holds the string denoting the display_value field in the database.
+	FieldDisplayValue = "display_value"
 	// FieldMeta holds the string denoting the meta field in the database.
 	FieldMeta = "meta"
 	// EdgeItem holds the string denoting the item edge name in mutations.
@@ -36,6 +40,8 @@ var Columns = []string{
 	FieldCreateTime,
 	FieldTitle,
 	FieldValue,
+	FieldDisplayTitle,
+	FieldDisplayValue,
 	FieldMeta,
 }
 

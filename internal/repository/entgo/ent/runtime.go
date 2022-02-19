@@ -75,7 +75,7 @@ func init() {
 	// metric.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	metric.TitleValidator = metricDescTitle.Validators[0].(func(string) error)
 	// metricDescDescription is the schema descriptor for description field.
-	metricDescDescription := metricFields[1].Descriptor()
+	metricDescDescription := metricFields[2].Descriptor()
 	// metric.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
 	metric.DescriptionValidator = metricDescDescription.Validators[0].(func(string) error)
 	taskMixin := schema.Task{}.Mixin()

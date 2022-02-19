@@ -17,6 +17,7 @@ type Metric struct {
 func (Metric) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("title").NotEmpty(),
+		field.JSON("display_title", make(map[string]string)).Optional(),
 		field.String("description").Optional().MaxLen(280),
 		field.JSON("meta", make(map[string]interface{})).Optional(),
 	}

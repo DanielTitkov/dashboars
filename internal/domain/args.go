@@ -15,5 +15,6 @@ type (
 		Category    string          `json:"category"`
 		Tags        []string        `json:"tags"`
 		Args        json.RawMessage `json:"args"`
+		// Metrics     []*Metric       `json:"metric"`
 	}
 )

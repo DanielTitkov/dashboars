@@ -40,6 +40,30 @@ func (du *DimensionUpdate) SetValue(s string) *DimensionUpdate {
 	return du
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (du *DimensionUpdate) SetDisplayTitle(m map[string]string) *DimensionUpdate {
+	du.mutation.SetDisplayTitle(m)
+	return du
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (du *DimensionUpdate) ClearDisplayTitle() *DimensionUpdate {
+	du.mutation.ClearDisplayTitle()
+	return du
+}
+
+// SetDisplayValue sets the "display_value" field.
+func (du *DimensionUpdate) SetDisplayValue(m map[string]string) *DimensionUpdate {
+	du.mutation.SetDisplayValue(m)
+	return du
+}
+
+// ClearDisplayValue clears the value of the "display_value" field.
+func (du *DimensionUpdate) ClearDisplayValue() *DimensionUpdate {
+	du.mutation.ClearDisplayValue()
+	return du
+}
+
 // SetMeta sets the "meta" field.
 func (du *DimensionUpdate) SetMeta(m map[string]interface{}) *DimensionUpdate {
 	du.mutation.SetMeta(m)
@@ -200,6 +224,32 @@ func (du *DimensionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: dimension.FieldValue,
 		})
 	}
+	if value, ok := du.mutation.DisplayTitle(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayTitle,
+		})
+	}
+	if du.mutation.DisplayTitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: dimension.FieldDisplayTitle,
+		})
+	}
+	if value, ok := du.mutation.DisplayValue(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayValue,
+		})
+	}
+	if du.mutation.DisplayValueCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: dimension.FieldDisplayValue,
+		})
+	}
 	if value, ok := du.mutation.Meta(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeJSON,
@@ -295,6 +345,30 @@ func (duo *DimensionUpdateOne) SetTitle(s string) *DimensionUpdateOne {
 // SetValue sets the "value" field.
 func (duo *DimensionUpdateOne) SetValue(s string) *DimensionUpdateOne {
 	duo.mutation.SetValue(s)
+	return duo
+}
+
+// SetDisplayTitle sets the "display_title" field.
+func (duo *DimensionUpdateOne) SetDisplayTitle(m map[string]string) *DimensionUpdateOne {
+	duo.mutation.SetDisplayTitle(m)
+	return duo
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (duo *DimensionUpdateOne) ClearDisplayTitle() *DimensionUpdateOne {
+	duo.mutation.ClearDisplayTitle()
+	return duo
+}
+
+// SetDisplayValue sets the "display_value" field.
+func (duo *DimensionUpdateOne) SetDisplayValue(m map[string]string) *DimensionUpdateOne {
+	duo.mutation.SetDisplayValue(m)
+	return duo
+}
+
+// ClearDisplayValue clears the value of the "display_value" field.
+func (duo *DimensionUpdateOne) ClearDisplayValue() *DimensionUpdateOne {
+	duo.mutation.ClearDisplayValue()
 	return duo
 }
 
@@ -480,6 +554,32 @@ func (duo *DimensionUpdateOne) sqlSave(ctx context.Context) (_node *Dimension, e
 			Type:   field.TypeString,
 			Value:  value,
 			Column: dimension.FieldValue,
+		})
+	}
+	if value, ok := duo.mutation.DisplayTitle(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayTitle,
+		})
+	}
+	if duo.mutation.DisplayTitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: dimension.FieldDisplayTitle,
+		})
+	}
+	if value, ok := duo.mutation.DisplayValue(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: dimension.FieldDisplayValue,
+		})
+	}
+	if duo.mutation.DisplayValueCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: dimension.FieldDisplayValue,
 		})
 	}
 	if value, ok := duo.mutation.Meta(); ok {

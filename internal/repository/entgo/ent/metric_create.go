@@ -56,6 +56,12 @@ func (mc *MetricCreate) SetTitle(s string) *MetricCreate {
 	return mc
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (mc *MetricCreate) SetDisplayTitle(m map[string]string) *MetricCreate {
+	mc.mutation.SetDisplayTitle(m)
+	return mc
+}
+
 // SetDescription sets the "description" field.
 func (mc *MetricCreate) SetDescription(s string) *MetricCreate {
 	mc.mutation.SetDescription(s)
@@ -257,6 +263,14 @@ func (mc *MetricCreate) createSpec() (*Metric, *sqlgraph.CreateSpec) {
 			Column: metric.FieldTitle,
 		})
 		_node.Title = value
+	}
+	if value, ok := mc.mutation.DisplayTitle(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: metric.FieldDisplayTitle,
+		})
+		_node.DisplayTitle = value
 	}
 	if value, ok := mc.mutation.Description(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

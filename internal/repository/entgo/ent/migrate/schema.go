@@ -14,6 +14,8 @@ var (
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "title", Type: field.TypeString},
 		{Name: "value", Type: field.TypeString},
+		{Name: "display_title", Type: field.TypeJSON, Nullable: true},
+		{Name: "display_value", Type: field.TypeJSON, Nullable: true},
 		{Name: "meta", Type: field.TypeJSON, Nullable: true},
 	}
 	// DimensionsTable holds the schema information for the "dimensions" table.
@@ -66,6 +68,7 @@ var (
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "title", Type: field.TypeString},
+		{Name: "display_title", Type: field.TypeJSON, Nullable: true},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 280},
 		{Name: "meta", Type: field.TypeJSON, Nullable: true},
 		{Name: "task_metrics", Type: field.TypeInt, Nullable: true},
@@ -78,7 +81,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "metrics_tasks_metrics",
-				Columns:    []*schema.Column{MetricsColumns[6]},
+				Columns:    []*schema.Column{MetricsColumns[7]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -87,7 +90,7 @@ var (
 			{
 				Name:    "metric_title_task_metrics",
 				Unique:  true,
-				Columns: []*schema.Column{MetricsColumns[3], MetricsColumns[6]},
+				Columns: []*schema.Column{MetricsColumns[3], MetricsColumns[7]},
 			},
 		},
 	}

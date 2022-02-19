@@ -42,6 +42,18 @@ func (mu *MetricUpdate) SetTitle(s string) *MetricUpdate {
 	return mu
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (mu *MetricUpdate) SetDisplayTitle(m map[string]string) *MetricUpdate {
+	mu.mutation.SetDisplayTitle(m)
+	return mu
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (mu *MetricUpdate) ClearDisplayTitle() *MetricUpdate {
+	mu.mutation.ClearDisplayTitle()
+	return mu
+}
+
 // SetDescription sets the "description" field.
 func (mu *MetricUpdate) SetDescription(s string) *MetricUpdate {
 	mu.mutation.SetDescription(s)
@@ -251,6 +263,19 @@ func (mu *MetricUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: metric.FieldTitle,
 		})
 	}
+	if value, ok := mu.mutation.DisplayTitle(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: metric.FieldDisplayTitle,
+		})
+	}
+	if mu.mutation.DisplayTitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: metric.FieldDisplayTitle,
+		})
+	}
 	if value, ok := mu.mutation.Description(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -394,6 +419,18 @@ func (muo *MetricUpdateOne) SetUpdateTime(t time.Time) *MetricUpdateOne {
 // SetTitle sets the "title" field.
 func (muo *MetricUpdateOne) SetTitle(s string) *MetricUpdateOne {
 	muo.mutation.SetTitle(s)
+	return muo
+}
+
+// SetDisplayTitle sets the "display_title" field.
+func (muo *MetricUpdateOne) SetDisplayTitle(m map[string]string) *MetricUpdateOne {
+	muo.mutation.SetDisplayTitle(m)
+	return muo
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (muo *MetricUpdateOne) ClearDisplayTitle() *MetricUpdateOne {
+	muo.mutation.ClearDisplayTitle()
 	return muo
 }
 
@@ -628,6 +665,19 @@ func (muo *MetricUpdateOne) sqlSave(ctx context.Context) (_node *Metric, err err
 			Type:   field.TypeString,
 			Value:  value,
 			Column: metric.FieldTitle,
+		})
+	}
+	if value, ok := muo.mutation.DisplayTitle(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: metric.FieldDisplayTitle,
+		})
+	}
+	if muo.mutation.DisplayTitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Column: metric.FieldDisplayTitle,
 		})
 	}
 	if value, ok := muo.mutation.Description(); ok {

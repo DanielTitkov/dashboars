@@ -26,9 +26,10 @@ type (
 		Display     bool
 		Schedule    string
 		Category    *TaskCategory
+		Metrics     []*Metric
 		Tags        []*TaskTag
-		Args        TaskArgs
-		ResolveFn   func(context.Context, *Task, *TaskInstance) (*TaskInstance, error)
+		Args        TaskArgs                                                           `json:"-"`
+		ResolveFn   func(context.Context, *Task, *TaskInstance) (*TaskInstance, error) `json:"-"`
 	}
 
 	TaskCategory struct {
@@ -63,9 +64,9 @@ type (
 	Metric struct {
 		ID          int
 		TaskID      int
-		Title       string
-		Description string
-		Meta        map[string]interface{}
+		Title       string                 `json:"title"`
+		Description string                 `json:"description"`
+		Meta        map[string]interface{} `json:"meta"`
 	}
 
 	Dimension struct {

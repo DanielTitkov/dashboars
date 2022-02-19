@@ -12,3 +12,13 @@ func (t *Task) JSONString() string {
 	}
 	return string(jsonBytes)
 }
+
+func (t *Task) GetMetric(title string) (*Metric, bool) {
+	for _, m := range t.Metrics {
+		if m.Title == title {
+			return m, true
+		}
+	}
+
+	return nil, false
+}

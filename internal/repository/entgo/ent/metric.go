@@ -24,6 +24,8 @@ type Metric struct {
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
+	// DisplayTitle holds the value of the "display_title" field.
+	DisplayTitle map[string]string `json:"display_title,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
 	// Meta holds the value of the "meta" field.
@@ -73,7 +75,7 @@ func (*Metric) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case metric.FieldMeta:
+		case metric.FieldDisplayTitle, metric.FieldMeta:
 			values[i] = new([]byte)
 		case metric.FieldID:
 			values[i] = new(sql.NullInt64)
@@ -121,6 +123,14 @@ func (m *Metric) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
 				m.Title = value.String
+			}
+		case metric.FieldDisplayTitle:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field display_title", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &m.DisplayTitle); err != nil {
+					return fmt.Errorf("unmarshal field display_title: %w", err)
+				}
 			}
 		case metric.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -187,6 +197,8 @@ func (m *Metric) String() string {
 	builder.WriteString(m.UpdateTime.Format(time.ANSIC))
 	builder.WriteString(", title=")
 	builder.WriteString(m.Title)
+	builder.WriteString(", display_title=")
+	builder.WriteString(fmt.Sprintf("%v", m.DisplayTitle))
 	builder.WriteString(", description=")
 	builder.WriteString(m.Description)
 	builder.WriteString(", meta=")

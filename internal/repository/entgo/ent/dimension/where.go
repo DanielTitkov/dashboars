@@ -412,6 +412,34 @@ func ValueContainsFold(v string) predicate.Dimension {
 	})
 }
 
+// DisplayTitleIsNil applies the IsNil predicate on the "display_title" field.
+func DisplayTitleIsNil() predicate.Dimension {
+	return predicate.Dimension(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDisplayTitle)))
+	})
+}
+
+// DisplayTitleNotNil applies the NotNil predicate on the "display_title" field.
+func DisplayTitleNotNil() predicate.Dimension {
+	return predicate.Dimension(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDisplayTitle)))
+	})
+}
+
+// DisplayValueIsNil applies the IsNil predicate on the "display_value" field.
+func DisplayValueIsNil() predicate.Dimension {
+	return predicate.Dimension(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDisplayValue)))
+	})
+}
+
+// DisplayValueNotNil applies the NotNil predicate on the "display_value" field.
+func DisplayValueNotNil() predicate.Dimension {
+	return predicate.Dimension(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDisplayValue)))
+	})
+}
+
 // MetaIsNil applies the IsNil predicate on the "meta" field.
 func MetaIsNil() predicate.Dimension {
 	return predicate.Dimension(func(s *sql.Selector) {

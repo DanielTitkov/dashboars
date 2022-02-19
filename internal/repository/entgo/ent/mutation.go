@@ -48,6 +48,8 @@ type DimensionMutation struct {
 	create_time   *time.Time
 	title         *string
 	value         *string
+	display_title *map[string]string
+	display_value *map[string]string
 	meta          *map[string]interface{}
 	clearedFields map[string]struct{}
 	item          map[int]struct{}
@@ -264,6 +266,104 @@ func (m *DimensionMutation) ResetValue() {
 	m.value = nil
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (m *DimensionMutation) SetDisplayTitle(value map[string]string) {
+	m.display_title = &value
+}
+
+// DisplayTitle returns the value of the "display_title" field in the mutation.
+func (m *DimensionMutation) DisplayTitle() (r map[string]string, exists bool) {
+	v := m.display_title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayTitle returns the old "display_title" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldDisplayTitle(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayTitle: %w", err)
+	}
+	return oldValue.DisplayTitle, nil
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (m *DimensionMutation) ClearDisplayTitle() {
+	m.display_title = nil
+	m.clearedFields[dimension.FieldDisplayTitle] = struct{}{}
+}
+
+// DisplayTitleCleared returns if the "display_title" field was cleared in this mutation.
+func (m *DimensionMutation) DisplayTitleCleared() bool {
+	_, ok := m.clearedFields[dimension.FieldDisplayTitle]
+	return ok
+}
+
+// ResetDisplayTitle resets all changes to the "display_title" field.
+func (m *DimensionMutation) ResetDisplayTitle() {
+	m.display_title = nil
+	delete(m.clearedFields, dimension.FieldDisplayTitle)
+}
+
+// SetDisplayValue sets the "display_value" field.
+func (m *DimensionMutation) SetDisplayValue(value map[string]string) {
+	m.display_value = &value
+}
+
+// DisplayValue returns the value of the "display_value" field in the mutation.
+func (m *DimensionMutation) DisplayValue() (r map[string]string, exists bool) {
+	v := m.display_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayValue returns the old "display_value" field's value of the Dimension entity.
+// If the Dimension object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DimensionMutation) OldDisplayValue(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayValue: %w", err)
+	}
+	return oldValue.DisplayValue, nil
+}
+
+// ClearDisplayValue clears the value of the "display_value" field.
+func (m *DimensionMutation) ClearDisplayValue() {
+	m.display_value = nil
+	m.clearedFields[dimension.FieldDisplayValue] = struct{}{}
+}
+
+// DisplayValueCleared returns if the "display_value" field was cleared in this mutation.
+func (m *DimensionMutation) DisplayValueCleared() bool {
+	_, ok := m.clearedFields[dimension.FieldDisplayValue]
+	return ok
+}
+
+// ResetDisplayValue resets all changes to the "display_value" field.
+func (m *DimensionMutation) ResetDisplayValue() {
+	m.display_value = nil
+	delete(m.clearedFields, dimension.FieldDisplayValue)
+}
+
 // SetMeta sets the "meta" field.
 func (m *DimensionMutation) SetMeta(value map[string]interface{}) {
 	m.meta = &value
@@ -386,7 +486,7 @@ func (m *DimensionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DimensionMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 6)
 	if m.create_time != nil {
 		fields = append(fields, dimension.FieldCreateTime)
 	}
@@ -395,6 +495,12 @@ func (m *DimensionMutation) Fields() []string {
 	}
 	if m.value != nil {
 		fields = append(fields, dimension.FieldValue)
+	}
+	if m.display_title != nil {
+		fields = append(fields, dimension.FieldDisplayTitle)
+	}
+	if m.display_value != nil {
+		fields = append(fields, dimension.FieldDisplayValue)
 	}
 	if m.meta != nil {
 		fields = append(fields, dimension.FieldMeta)
@@ -413,6 +519,10 @@ func (m *DimensionMutation) Field(name string) (ent.Value, bool) {
 		return m.Title()
 	case dimension.FieldValue:
 		return m.Value()
+	case dimension.FieldDisplayTitle:
+		return m.DisplayTitle()
+	case dimension.FieldDisplayValue:
+		return m.DisplayValue()
 	case dimension.FieldMeta:
 		return m.Meta()
 	}
@@ -430,6 +540,10 @@ func (m *DimensionMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldTitle(ctx)
 	case dimension.FieldValue:
 		return m.OldValue(ctx)
+	case dimension.FieldDisplayTitle:
+		return m.OldDisplayTitle(ctx)
+	case dimension.FieldDisplayValue:
+		return m.OldDisplayValue(ctx)
 	case dimension.FieldMeta:
 		return m.OldMeta(ctx)
 	}
@@ -461,6 +575,20 @@ func (m *DimensionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetValue(v)
+		return nil
+	case dimension.FieldDisplayTitle:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayTitle(v)
+		return nil
+	case dimension.FieldDisplayValue:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayValue(v)
 		return nil
 	case dimension.FieldMeta:
 		v, ok := value.(map[string]interface{})
@@ -499,6 +627,12 @@ func (m *DimensionMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *DimensionMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(dimension.FieldDisplayTitle) {
+		fields = append(fields, dimension.FieldDisplayTitle)
+	}
+	if m.FieldCleared(dimension.FieldDisplayValue) {
+		fields = append(fields, dimension.FieldDisplayValue)
+	}
 	if m.FieldCleared(dimension.FieldMeta) {
 		fields = append(fields, dimension.FieldMeta)
 	}
@@ -516,6 +650,12 @@ func (m *DimensionMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *DimensionMutation) ClearField(name string) error {
 	switch name {
+	case dimension.FieldDisplayTitle:
+		m.ClearDisplayTitle()
+		return nil
+	case dimension.FieldDisplayValue:
+		m.ClearDisplayValue()
+		return nil
 	case dimension.FieldMeta:
 		m.ClearMeta()
 		return nil
@@ -535,6 +675,12 @@ func (m *DimensionMutation) ResetField(name string) error {
 		return nil
 	case dimension.FieldValue:
 		m.ResetValue()
+		return nil
+	case dimension.FieldDisplayTitle:
+		m.ResetDisplayTitle()
+		return nil
+	case dimension.FieldDisplayValue:
+		m.ResetDisplayValue()
 		return nil
 	case dimension.FieldMeta:
 		m.ResetMeta()
@@ -1432,6 +1578,7 @@ type MetricMutation struct {
 	create_time   *time.Time
 	update_time   *time.Time
 	title         *string
+	display_title *map[string]string
 	description   *string
 	meta          *map[string]interface{}
 	clearedFields map[string]struct{}
@@ -1651,6 +1798,55 @@ func (m *MetricMutation) ResetTitle() {
 	m.title = nil
 }
 
+// SetDisplayTitle sets the "display_title" field.
+func (m *MetricMutation) SetDisplayTitle(value map[string]string) {
+	m.display_title = &value
+}
+
+// DisplayTitle returns the value of the "display_title" field in the mutation.
+func (m *MetricMutation) DisplayTitle() (r map[string]string, exists bool) {
+	v := m.display_title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayTitle returns the old "display_title" field's value of the Metric entity.
+// If the Metric object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MetricMutation) OldDisplayTitle(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayTitle: %w", err)
+	}
+	return oldValue.DisplayTitle, nil
+}
+
+// ClearDisplayTitle clears the value of the "display_title" field.
+func (m *MetricMutation) ClearDisplayTitle() {
+	m.display_title = nil
+	m.clearedFields[metric.FieldDisplayTitle] = struct{}{}
+}
+
+// DisplayTitleCleared returns if the "display_title" field was cleared in this mutation.
+func (m *MetricMutation) DisplayTitleCleared() bool {
+	_, ok := m.clearedFields[metric.FieldDisplayTitle]
+	return ok
+}
+
+// ResetDisplayTitle resets all changes to the "display_title" field.
+func (m *MetricMutation) ResetDisplayTitle() {
+	m.display_title = nil
+	delete(m.clearedFields, metric.FieldDisplayTitle)
+}
+
 // SetDescription sets the "description" field.
 func (m *MetricMutation) SetDescription(s string) {
 	m.description = &s
@@ -1861,7 +2057,7 @@ func (m *MetricMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MetricMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.create_time != nil {
 		fields = append(fields, metric.FieldCreateTime)
 	}
@@ -1870,6 +2066,9 @@ func (m *MetricMutation) Fields() []string {
 	}
 	if m.title != nil {
 		fields = append(fields, metric.FieldTitle)
+	}
+	if m.display_title != nil {
+		fields = append(fields, metric.FieldDisplayTitle)
 	}
 	if m.description != nil {
 		fields = append(fields, metric.FieldDescription)
@@ -1891,6 +2090,8 @@ func (m *MetricMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdateTime()
 	case metric.FieldTitle:
 		return m.Title()
+	case metric.FieldDisplayTitle:
+		return m.DisplayTitle()
 	case metric.FieldDescription:
 		return m.Description()
 	case metric.FieldMeta:
@@ -1910,6 +2111,8 @@ func (m *MetricMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUpdateTime(ctx)
 	case metric.FieldTitle:
 		return m.OldTitle(ctx)
+	case metric.FieldDisplayTitle:
+		return m.OldDisplayTitle(ctx)
 	case metric.FieldDescription:
 		return m.OldDescription(ctx)
 	case metric.FieldMeta:
@@ -1943,6 +2146,13 @@ func (m *MetricMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTitle(v)
+		return nil
+	case metric.FieldDisplayTitle:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayTitle(v)
 		return nil
 	case metric.FieldDescription:
 		v, ok := value.(string)
@@ -1988,6 +2198,9 @@ func (m *MetricMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MetricMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(metric.FieldDisplayTitle) {
+		fields = append(fields, metric.FieldDisplayTitle)
+	}
 	if m.FieldCleared(metric.FieldDescription) {
 		fields = append(fields, metric.FieldDescription)
 	}
@@ -2008,6 +2221,9 @@ func (m *MetricMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MetricMutation) ClearField(name string) error {
 	switch name {
+	case metric.FieldDisplayTitle:
+		m.ClearDisplayTitle()
+		return nil
 	case metric.FieldDescription:
 		m.ClearDescription()
 		return nil
@@ -2030,6 +2246,9 @@ func (m *MetricMutation) ResetField(name string) error {
 		return nil
 	case metric.FieldTitle:
 		m.ResetTitle()
+		return nil
+	case metric.FieldDisplayTitle:
+		m.ResetDisplayTitle()
 		return nil
 	case metric.FieldDescription:
 		m.ResetDescription()

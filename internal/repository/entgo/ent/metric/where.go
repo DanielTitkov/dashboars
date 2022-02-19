@@ -384,6 +384,20 @@ func TitleContainsFold(v string) predicate.Metric {
 	})
 }
 
+// DisplayTitleIsNil applies the IsNil predicate on the "display_title" field.
+func DisplayTitleIsNil() predicate.Metric {
+	return predicate.Metric(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDisplayTitle)))
+	})
+}
+
+// DisplayTitleNotNil applies the NotNil predicate on the "display_title" field.
+func DisplayTitleNotNil() predicate.Metric {
+	return predicate.Metric(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDisplayTitle)))
+	})
+}
+
 // DescriptionEQ applies the EQ predicate on the "description" field.
 func DescriptionEQ(v string) predicate.Metric {
 	return predicate.Metric(func(s *sql.Selector) {

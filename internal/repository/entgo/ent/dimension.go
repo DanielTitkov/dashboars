@@ -23,6 +23,10 @@ type Dimension struct {
 	Title string `json:"title,omitempty"`
 	// Value holds the value of the "value" field.
 	Value string `json:"value,omitempty"`
+	// DisplayTitle holds the value of the "display_title" field.
+	DisplayTitle map[string]string `json:"display_title,omitempty"`
+	// DisplayValue holds the value of the "display_value" field.
+	DisplayValue map[string]string `json:"display_value,omitempty"`
 	// Meta holds the value of the "meta" field.
 	Meta map[string]interface{} `json:"meta,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -53,7 +57,7 @@ func (*Dimension) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case dimension.FieldMeta:
+		case dimension.FieldDisplayTitle, dimension.FieldDisplayValue, dimension.FieldMeta:
 			values[i] = new([]byte)
 		case dimension.FieldID:
 			values[i] = new(sql.NullInt64)
@@ -99,6 +103,22 @@ func (d *Dimension) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field value", values[i])
 			} else if value.Valid {
 				d.Value = value.String
+			}
+		case dimension.FieldDisplayTitle:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field display_title", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &d.DisplayTitle); err != nil {
+					return fmt.Errorf("unmarshal field display_title: %w", err)
+				}
+			}
+		case dimension.FieldDisplayValue:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field display_value", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &d.DisplayValue); err != nil {
+					return fmt.Errorf("unmarshal field display_value: %w", err)
+				}
 			}
 		case dimension.FieldMeta:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -147,6 +167,10 @@ func (d *Dimension) String() string {
 	builder.WriteString(d.Title)
 	builder.WriteString(", value=")
 	builder.WriteString(d.Value)
+	builder.WriteString(", display_title=")
+	builder.WriteString(fmt.Sprintf("%v", d.DisplayTitle))
+	builder.WriteString(", display_value=")
+	builder.WriteString(fmt.Sprintf("%v", d.DisplayValue))
 	builder.WriteString(", meta=")
 	builder.WriteString(fmt.Sprintf("%v", d.Meta))
 	builder.WriteByte(')')

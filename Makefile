@@ -1,5 +1,5 @@
 NAME := app
-BUILD_CMD ?= CGO_ENABLED=0 go build -o bin/${NAME} -ldflags '-v -w -s' ./cmd
+BUILD_CMD ?= CGO_ENABLED=0 go build -o bin/${NAME} -ldflags '-v -w -s' ./cmd/${NAME}
 DEV_CONFIG_PATH := ./configs/dev.yml
 CONFIG_TEMPLATE_PATH := ./configs/template.yml
 

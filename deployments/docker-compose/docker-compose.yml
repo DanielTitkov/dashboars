@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deployments/docker/Dockerfile
+    ports:
+      - "8000:8000"
+    command: "./app /opt/configs/docker.yml"
+    environment:
+      - ENV=docker
+      - CONFIG_PATH=configs/docker.yml
+    depends_on:
+      - postgres
+    volumes: 
+      - ../../configs:/opt/configs
+    networks:
+      - dashboars
+
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: test
+      POSTGRES_DB: dashboars
+    volumes:
+      - dashboars-database-data:/var/lib/postgresql/data/
+    networks:
+      - dashboars
+
+volumes:
+  dashboars-database-data:
+
+networks:
+  dashboars: 

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"encoding/json"
-	"log"
 	"net/url"
 	"regexp"
 	"time"
@@ -77,7 +76,7 @@ func (p *Parser) Run() (*Result, error) {
 
 	var resultItems []ResultItem
 	for _, visit := range p.Cfg.Visit {
-		log.Println("NEXT VISIT") // FIXME
+		// log.Println("NEXT VISIT") // FIXME
 		baseURL, err := url.Parse(visit.URL)
 		if err != nil {
 			return nil, err
@@ -126,7 +125,7 @@ func (p *Parser) Run() (*Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Println("VISIT DONE") // FIXME
+		// log.Println("VISIT DONE") // FIXME
 	}
 
 	endTime := time.Now()

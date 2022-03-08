@@ -50,7 +50,10 @@ func New(
 ) (*App, error) {
 	s := gocron.NewScheduler(time.UTC)
 	s.SetMaxConcurrentJobs(cfg.Task.MaxConcurrency, gocron.WaitMode)
-	// s.WaitForScheduleAll()
+	if cfg.Env != "dev" {
+		// for dev env run tasks immediately
+		s.WaitForScheduleAll()
+	}
 
 	app := App{
 		cfg:       cfg,

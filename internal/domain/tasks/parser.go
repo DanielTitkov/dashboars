@@ -96,7 +96,7 @@ func ParserTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 	var errs error
 	for _, cfg := range parserCfg {
 		p := parser.New(&cfg)
-		fmt.Println("RUNNING PARSER TASK", cfg) // FIXME
+		// fmt.Println("RUNNING PARSER TASK", cfg) // FIXME
 		result, err := p.Run()
 		if err != nil {
 			errs = multierror.Append(errs, err)
@@ -133,7 +133,7 @@ func ParserTaskResolveFn(ctx context.Context, t *domain.Task, ti *domain.TaskIns
 			})
 		}
 
-		fmt.Println("PARSER RESULT", result) // FIXME
+		// fmt.Println("PARSER RESULT", result) // FIXME
 	}
 
 	if errs != nil {

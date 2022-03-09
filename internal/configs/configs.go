@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Env      string
 	DB       DBConfig
+	Auth     AuthConfig
 	Server   ServerConfig
 	Data     DataConfig
 	Task     TaskConfig

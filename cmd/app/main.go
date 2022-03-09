@@ -64,8 +64,8 @@ func main() {
 	)
 
 	// Run the server.
-	http.Handle("/", live.NewHttpHandler(live.NewCookieStore("session-name", []byte("weak-secret")), h.Home()))
-	http.Handle("/summary", live.NewHttpHandler(live.NewCookieStore("session-name", []byte("weak-secret")), h.SystemSummary()))
+	http.Handle("/", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.Home()))
+	http.Handle("/summary", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.SystemSummary()))
 	// live scripts
 	http.Handle("/live.js", live.Javascript{})
 	http.Handle("/auto.js.map", live.JavascriptMap{})

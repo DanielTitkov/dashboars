@@ -13,6 +13,9 @@ task:
 app:
   systemSummaryInterval: 10 # minutes
   systemSummaryTimeout: 100 # milliseconds
+auth:
+  exp: 7200 # hours
+  secret: secret-key
 data:
   presets:
     taskPresetsPaths: 

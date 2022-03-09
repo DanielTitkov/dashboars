@@ -7,13 +7,16 @@ server:
   port: 8000
   host: "0.0.0.0"
 task:
-  defaultSchedule: "1d"
+  defaultSchedule: "24h"
   defaultRetryNumber: 3
   defaultRetryDelay: "300s"
   maxConcurrency: 50
 app:
   systemSummaryInterval: 5 # minutes
   systemSummaryTimeout: 500 # milliseconds
+auth:
+  exp: 72 # hours
+  secret: {{secret_key}}
 data:
   presets:
     taskPresetsPaths: 

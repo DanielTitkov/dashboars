@@ -1,8 +1,9 @@
 name: Deploy
-on:
-  push:
-    tags:
-      - v*
+on: [push, pull_request]
+# on:
+#   push:
+#     tags:
+#       - v*
 
 jobs:
   # lint code with golangci-lint using built-in action

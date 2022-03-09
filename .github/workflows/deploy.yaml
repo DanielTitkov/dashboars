@@ -131,7 +131,7 @@ jobs:
   report:
     environment: stage
     name: Report deploy
-    needs: [ping]
+    needs: [deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Report deploy

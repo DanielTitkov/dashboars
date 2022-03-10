@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/DanielTitkov/dashboars/internal/domain"
 	"github.com/DanielTitkov/dashboars/internal/domain/tasks"
@@ -55,7 +56,15 @@ func (a *App) scheduleTasks() error {
 			continue
 		}
 
-		_, err := a.scheduler.Every(t.Schedule).Tag(t.Code, t.Type).Do(a.makeTaskJob(t, 0))
+		var err error
+		taskJob := a.makeTaskJob(t, 0)
+		if strings.Contains(t.Schedule, "*") || strings.Contains(t.Schedule, " ") {
+			// if this is cron string
+			_, err = a.scheduler.Cron(t.Schedule).Tag(t.Code, t.Type).Do(taskJob)
+		} else {
+			// if this is something like 1h etc.
+			_, err = a.scheduler.Every(t.Schedule).Tag(t.Code, t.Type).Do(taskJob)
+		}
 		if err != nil {
 			return err
 		}

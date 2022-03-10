@@ -10,7 +10,7 @@
     "title": "Cian data",
     "description": "Parse Cian data",
     "active": true,
-    "schedule": "24h",
+    "schedule": "30 12 * * *",
     "args": {
       "metrics": [
         {

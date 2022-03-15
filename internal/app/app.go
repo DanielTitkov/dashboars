@@ -26,6 +26,7 @@ type (
 		CreateOrUpdateTask(context.Context, *domain.Task) (*domain.Task, error)
 		CreateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
 		UpdateTaskInstance(context.Context, *domain.TaskInstance) (*domain.TaskInstance, error)
+		GetTasks(ctx context.Context, limit, offset int) ([]*domain.Task, error)
 
 		// tags and categories
 		GetOrCreateTaskCategory(context.Context, *domain.TaskCategory) (*domain.TaskCategory, error)

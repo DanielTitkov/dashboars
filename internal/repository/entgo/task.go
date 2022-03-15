@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/DanielTitkov/dashboars/internal/domain/tasks"
 
@@ -18,6 +19,34 @@ func (r *EntgoRepository) GetTaskCount(ctx context.Context) (int, error) {
 
 func (r *EntgoRepository) GetActiveTaskCount(ctx context.Context) (int, error) {
 	return r.client.Task.Query().Where(task.ActiveEQ(true)).Count(ctx)
+}
+
+func (r *EntgoRepository) GetTasks(ctx context.Context, limit, offset int) ([]*domain.Task, error) {
+	tasks, err := r.client.Task.Query().
+		WithCategory().
+		WithTags().
+		Limit(limit).
+		Offset(offset).
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*domain.Task
+	for _, t := range tasks {
+		task, err := entToDomainTask(t)
+		if err != nil {
+			task = &domain.Task{
+				ID:          task.ID,
+				Title:       task.Title,
+				Description: fmt.Sprintf("%s | failed to parse task data: %s", task.Description, err),
+			}
+		}
+		ret = append(ret, task)
+	}
+
+	return ret, nil
 }
 
 func (r *EntgoRepository) CreateOrUpdateTask(ctx context.Context, t *domain.Task) (*domain.Task, error) {

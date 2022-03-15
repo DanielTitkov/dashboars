@@ -20,8 +20,8 @@ auth:
 data:
   presets:
     taskPresetsPaths: 
-      # - ./data/presets/tasks.random.json
-      # - ./data/presets/tasks.failing.json
+      - ./data/presets/tasks.random.json
+      - ./data/presets/tasks.failing.json
       - ./data/presets/tasks.parser.json
 external:
   telegram:

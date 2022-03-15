@@ -9,7 +9,7 @@
         "code": "rand1",
         "title": "Random 1",
         "description": "random task for testing purposes",
-        "active": true,
+        "active": false,
         "schedule": "2m",
         "args": {
             "min": 1,
@@ -26,7 +26,7 @@
         "code": "rand2",
         "title": "Random 2",
         "description": "another random task for testing purposes",
-        "active": true,
+        "active": false,
         "schedule": "3m",
         "args": {
             "min": 100,

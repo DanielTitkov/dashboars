@@ -11,6 +11,10 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/domain/tasks"
 )
 
+func (a *App) GetTasks(ctx context.Context, limit, offset int) ([]*domain.Task, error) {
+	return a.repo.GetTasks(ctx, limit, offset)
+}
+
 func (a *App) makeTaskJob(task *domain.Task, attempt int) func() {
 	return func() {
 		// create task instance in db

@@ -9,7 +9,7 @@
         "code": "fail",
         "title": "Failing",
         "description": "failing task for testing purposes",
-        "active": true,
+        "active": false,
         "schedule": "1m",
         "args": {
             "itemsNumber": 5,

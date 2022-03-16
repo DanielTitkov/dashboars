@@ -29,8 +29,8 @@ func (a *App) makeTaskJob(task *domain.Task, attempt int) func() {
 		ti, err = task.ResolveFn(context.TODO(), task, ti)
 		if err != nil {
 			a.log.Error("task failed", err)
-			if attempt < a.cfg.Task.DefaultRetryNumber {
-				_, err := a.scheduler.Every(a.cfg.Task.DefaultRetryDelay).LimitRunsTo(1).WaitForSchedule().Do(a.makeTaskJob(task, attempt+1))
+			if attempt < a.Cfg.Task.DefaultRetryNumber {
+				_, err := a.scheduler.Every(a.Cfg.Task.DefaultRetryDelay).LimitRunsTo(1).WaitForSchedule().Do(a.makeTaskJob(task, attempt+1))
 				if err != nil {
 					a.log.Error("failed to schedule retry", err)
 				}
@@ -78,8 +78,8 @@ func (a *App) scheduleTasks() error {
 }
 
 func (a *App) loadTasksPresets() error {
-	a.log.Info("loading tasks", fmt.Sprint(a.cfg.Data.Presets.TaskPresetsPaths))
-	for _, path := range a.cfg.Data.Presets.TaskPresetsPaths {
+	a.log.Info("loading tasks", fmt.Sprint(a.Cfg.Data.Presets.TaskPresetsPaths))
+	for _, path := range a.Cfg.Data.Presets.TaskPresetsPaths {
 		a.log.Debug("reading from file", path)
 		data, err := ioutil.ReadFile(path)
 		if err != nil {

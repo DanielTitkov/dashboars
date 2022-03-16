@@ -33,11 +33,20 @@
                         <p>{{ $task.Description }}</p>
                     </div>
                 </div>
-
             </div>
         </div>
         </p>
         {{ end }}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {{ if gt .Page 1 }}
+            <a class="pagination-previous" live-click="tasks-update-page" live-value-page="{{.PrevPage}}">Previous page</a>
+            {{ end }}
+            {{ if ne .MaxPage 1 }}
+            {{ if lt .Page .MaxPage }}
+            <a class="pagination-next" live-click="tasks-update-page" live-value-page="{{.NextPage}}">Next page</a>
+            {{ end }}
+            {{ end }}
+        </nav>
     </div>
 </main>
 

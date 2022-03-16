@@ -14,7 +14,7 @@ import (
 
 type (
 	App struct {
-		cfg             configs.Config
+		Cfg             configs.Config
 		log             *logger.Logger
 		scheduler       *gocron.Scheduler
 		repo            Repository
@@ -57,7 +57,7 @@ func New(
 	}
 
 	app := App{
-		cfg:       cfg,
+		Cfg:       cfg,
 		log:       logger,
 		scheduler: s,
 		repo:      repo,

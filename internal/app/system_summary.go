@@ -23,7 +23,7 @@ func (a *App) GetSystemSummary(ctx context.Context) (*domain.SystemSymmary, erro
 
 func (a *App) UpdateSystemSummaryJob() {
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(a.cfg.App.SystemSummaryTimeout)*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(a.Cfg.App.SystemSummaryTimeout)*time.Millisecond)
 		processDone := make(chan bool)
 		go func() {
 			err := a.updateSystemSummary(ctx)
@@ -40,7 +40,7 @@ func (a *App) UpdateSystemSummaryJob() {
 		}
 
 		cancel()
-		time.Sleep(time.Minute * time.Duration(a.cfg.App.SystemSummaryInterval))
+		time.Sleep(time.Minute * time.Duration(a.Cfg.App.SystemSummaryInterval))
 	}
 }
 

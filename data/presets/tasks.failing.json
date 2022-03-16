@@ -8,12 +8,29 @@
         "type": "failing",
         "code": "fail",
         "title": "Failing",
-        "description": "failing task for testing purposes",
+        "description": "Failing task for testing purposes",
         "active": false,
         "schedule": "1m",
         "args": {
             "itemsNumber": 5,
             "failOnEvery": 2
+        }
+    },
+    {
+        "category": "test",
+        "tags": [
+            "dev",
+            "test"
+        ],
+        "type": "failing",
+        "code": "fail2",
+        "title": "Failing 2",
+        "description": "Another failing task for testing purposes",
+        "active": false,
+        "schedule": "1m",
+        "args": {
+            "itemsNumber": 10,
+            "failOnEvery": 7
         }
     }
 ]

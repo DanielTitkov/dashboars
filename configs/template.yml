@@ -12,6 +12,7 @@ task:
   defaultRetryDelay: "300s"
   maxConcurrency: 50
 app:
+  defaultTaskPageLimit: 10
   systemSummaryInterval: 5 # minutes
   systemSummaryTimeout: 500 # milliseconds
 auth:

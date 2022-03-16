@@ -79,7 +79,6 @@ func (h *Handler) Tasks() live.Handler {
 
 	lvh := live.NewHandler(live.WithTemplateRenderer(t))
 
-	// Set the mount function for this handler.
 	lvh.HandleMount(func(ctx context.Context, s live.Socket) (interface{}, error) {
 		i := h.NewTasksInstance(ctx, s)
 		i.updateTasks(ctx, h)
@@ -94,7 +93,6 @@ func (h *Handler) Tasks() live.Handler {
 		return i, nil
 	})
 
-	// Alternative method to get to next page, using the server side Patch event.
 	lvh.HandleEvent(eventTasksUpdatePage, func(ctx context.Context, s live.Socket, p live.Params) (interface{}, error) {
 		page := p.Int(paramTasksPage)
 		v := url.Values{}

@@ -19,4 +19,5 @@ WORKDIR /opt/${NAME}
 COPY --from=build /opt/${NAME}/bin/${NAME} ./${NAME}
 COPY --from=build /opt/${NAME}/data ./data
 COPY --from=build /opt/${NAME}/templates ./templates
+COPY --from=build /opt/${NAME}/web ./web
 CMD ./${NAME} ${CONFIG_PATH}

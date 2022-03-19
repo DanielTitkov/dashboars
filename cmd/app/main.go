@@ -14,6 +14,7 @@ import (
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo"
 	"github.com/DanielTitkov/dashboars/internal/repository/entgo/ent"
 	"github.com/DanielTitkov/dashboars/logger"
+	"github.com/gorilla/mux"
 	"github.com/jfyne/live"
 
 	_ "github.com/lib/pq"
@@ -63,17 +64,19 @@ func main() {
 		"templates/",
 	)
 
+	r := mux.NewRouter()
 	// Run the server.
-	http.Handle("/", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.Home()))
-	http.Handle("/summary", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.SystemSummary()))
-	http.Handle("/tasks", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.Tasks()))
+	r.Handle("/", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.Home()))
+	r.Handle("/summary", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.SystemSummary()))
+	r.Handle("/task-details/{taskID}", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.TaskDetails()))
+	r.Handle("/tasks", live.NewHttpHandler(live.NewCookieStore("session-name", []byte(cfg.Auth.Secret)), h.Tasks()))
 	// live scripts
-	http.Handle("/live.js", live.Javascript{})
-	http.Handle("/auto.js.map", live.JavascriptMap{})
+	r.Handle("/live.js", live.Javascript{})
+	r.Handle("/auto.js.map", live.JavascriptMap{})
 	// favicon
-	http.HandleFunc("/favicon.ico", faviconHandler)
+	r.HandleFunc("/favicon.ico", faviconHandler)
 	// serve
-	log.Fatal(http.ListenAndServe(cfg.Server.GetAddress(), nil))
+	log.Fatal(http.ListenAndServe(cfg.Server.GetAddress(), r))
 }
 
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
